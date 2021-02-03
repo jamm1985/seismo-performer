@@ -2,7 +2,7 @@
 
 # Introduction
 
-In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper The Seismo-Transformer: generally based machine learning approach for recognizing seismic phases from local earthquakes. 
+In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Transformer: generally based machine learning approach for recognizing seismic phases from local earthquakes_. 
 
 # Installation
 
