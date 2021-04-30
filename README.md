@@ -24,4 +24,4 @@ Sample dims:
 
 # Citation
 
-The manuscript have been submitted to Seismological Research Letters on 27 Jan 2021.
+The manuscript have been submitted to a journal.

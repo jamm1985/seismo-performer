@@ -2,8 +2,8 @@
 File: train.py
 Author: Andrey Stepnov
 Email: myjamm@gmail.com
-Github: https://github.com/jamm1985
-Description: train model on large dataset
+Github: https://github.com/jamm1985/seismo-transformer
+Description: train examples on large dataset
 """
 
 import tensorflow as tf
