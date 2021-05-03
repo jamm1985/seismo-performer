@@ -113,6 +113,9 @@ history = model_with_spec.fit(
     batch_size=128,
     validation_data=(X_test, y_test))
 
+
+model_with_spec.save('/Users/jamm/Downloads/web/mymodel')
+
 model_hybrid = seismo_transformer_hybrid(
         maxlen=400,
         patch_size=25,

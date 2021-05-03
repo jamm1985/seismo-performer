@@ -89,7 +89,8 @@ class ClsToken(keras.layers.Layer):
             shape=(1, 1, self.embed_dim),
             initializer=tf.keras.initializers.RandomNormal(),
             dtype=tf.float32,
-            trainable=True
+            trainable=True,
+            name='ClsTokenW'
         )
 
     def call(self, inputs):
@@ -112,7 +113,8 @@ class PosEmbeding(keras.layers.Layer):
             shape=(num_patches, embed_dim),
             initializer=tf.keras.initializers.RandomNormal(),
             dtype=tf.float32,
-            trainable=True
+            trainable=True,
+            name='PosEmbedingW'
         )
 
     def call(self, inputs):
