@@ -387,7 +387,7 @@ def seismo_performer_with_spec(
     return model
 
 
-def seismo_transformer_hybrid(
+def seismo_performer_hybrid(
         maxlen=400,
         patch_size=25,
         patch_size_1=2,
@@ -445,7 +445,7 @@ def seismo_transformer_hybrid(
     # encoder block
     x = layers.Dropout(drop_out_rate)(x)
     for i in range(layers_depth):
-        x = TransformerBlock(d_model, num_heads, ff_dim)(x)
+        x = PerformerBlock(d_model, num_heads, ff_dim)(x)
     # to MLP head
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
     # MLP-head

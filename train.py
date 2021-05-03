@@ -116,7 +116,7 @@ history = model_with_spec.fit(
 
 model_with_spec.save('/Users/jamm/Downloads/web/mymodel')
 
-model_hybrid = seismo_transformer_hybrid(
+model_hybrid = seismo_performer_hybrid(
         maxlen=400,
         patch_size=25,
         patch_size_1=9,
