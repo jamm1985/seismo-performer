@@ -8,7 +8,7 @@ Description: train examples on large dataset
 
 import tensorflow as tf
 from tensorflow import keras
-from seismo_transformer import load_test_train_data, seismo_transformer, seismo_transformer_with_spec, seismo_transformer_hybrid, seismo_performer_with_spec
+from seismo_transformer import load_test_train_data, seismo_transformer, seismo_transformer_with_spec, seismo_performer_hybrid, seismo_performer_with_spec
 
 # Load CalTech data to NUMPY array.
 # takes 21GB of memory!!!
@@ -124,7 +124,7 @@ model_hybrid = seismo_performer_hybrid(
         num_channels=3,
         num_patches_spec = 13,
         nfft=128,
-        d_model=96,
+        d_model=48,
         num_heads=8,
         ff_dim_factor=4,
         layers_depth=8,
