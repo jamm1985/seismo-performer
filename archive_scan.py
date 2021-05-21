@@ -311,6 +311,8 @@ def load_transformer(weights_path):
                                    num_classes = 3,
                                    drop_out_rate = 0.1)
 
+    _model.summary()
+
     _model.load_weights(weights_path)
 
     _model.compile(optimizer = keras.optimizer.Adam(learning_rate = 0.001),
@@ -352,17 +354,22 @@ if __name__ == '__main__':
 
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', '-w', help = 'Path to model weights', type = str)
-    parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant.', type = bool,
-                        action = 'store_true')
-    parser.add_argument('--input', '-i', help = 'Path to .csv file with archive names.', type = str)
-    parser.add_argument('--out', '-o', help = 'Path to output file with predictions.', type = str)
-    parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95',
-                        type = float, default = 0.95)
-    parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', type = bool,
-                        action = 'store_true')
+    parser.add_argument('--weights', '-w', help = 'Path to model weights')
+    parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant.', action = 'store_true')
+    parser.add_argument('--input', '-i', help = 'Path to .csv file with archive names.')
+    parser.add_argument('--out', '-o', help = 'Path to output file with predictions.')
+    parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
+    parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
+
+    # Set some default arguments
+    if not args.weights:
+
+        if not args.favor:
+            args.weights = 'WEIGHTS/model.sac_full.h5'
+        else:
+            args.weights = 'WEIGHTS/favor_weight_placeholder.h5'
 
     archives = parse_archive_csv(args.input)  # parse archive names
 
