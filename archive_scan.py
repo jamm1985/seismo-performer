@@ -4,6 +4,11 @@ from obspy import read
 import obspy.core as oc
 from scipy.signal import find_peaks
 
+import seismo_transformer as st
+
+from tensorflow import keras
+
+
 def pre_process_stream(stream):
     """
     Does preprocessing on the stream (changes it's frequency), does linear detrend and
@@ -67,7 +72,7 @@ def progress_bar(progress, characters_count = 20,
         print(bar_str, end = '')
 
 
-def cut_traces(*traces):
+def cut_traces(*_traces):
     """
     Cut traces to same timeframe (same start time and end time). Returns list of new traces.
 
@@ -75,10 +80,10 @@ def cut_traces(*traces):
     Any number of traces (depends on the amount of channels). Unpack * if passing a list of traces.
     e.g. scan_traces(*trs)
     """
-    start_time = max([x.stats.starttime for x in traces])
-    end_time = max([x.stats.endtime for x in traces])
+    _start_time = max([x.stats.starttime for x in _traces])
+    _end_time = max([x.stats.endtime for x in _traces])
 
-    return_traces = [x.slice(start_time, end_time) for x in traces]
+    return_traces = [x.slice(_start_time, _end_time) for x in _traces]
 
     return return_traces
 
@@ -100,10 +105,10 @@ def sliding_window(data, n_features, n_shift):
 
     for i in range(win_count):
 
-        start_pos = i * n_shift
-        end_pos = start_pos + n_features
+        _start_pos = i * n_shift
+        _end_pos = start_pos + n_features
 
-        windows[i][:] = data[start_pos : end_pos]
+        windows[i][:] = data[_start_pos : _end_pos]
 
     return windows.copy()
 
@@ -118,15 +123,15 @@ def normalize_windows_per_trace(windows):
     n_win = windows.shape[0]
     ch_num = windows.shape[2]
 
-    for i in range(n_win):
+    for _i in range(n_win):
 
-        for j in range(ch_num):
+        for _j in range(ch_num):
 
-            win_max = np.max(np.abs(windows[i, :, j]))
-            windows[i, :, j] = windows[i, :, j] / win_max
+            win_max = np.max(np.abs(windows[_i, :, _j]))
+            windows[_i, :, _j] = windows[_i, :, _j] / win_max
 
 
-def scan_traces(*traces, model = None, n_features = 400, shift = 10, batch_size = 100, args = None, code = None):
+def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size = 100):
     """
     Get predictions on the group of traces.
 
@@ -142,12 +147,12 @@ def scan_traces(*traces, model = None, n_features = 400, shift = 10, batch_size 
     batch_size       -- model.fit batch size
     """
     # Check input types
-    for x in traces:
+    for x in _traces:
         if type(x) != oc.trace.Trace:
             raise TypeError('traces should be a list or containing obspy.core.trace.Trace objects')
 
     # Cut all traces to a same timeframe
-    traces = cut_traces(*traces)
+    _traces = cut_traces(*_traces)
 
     # Normalize
     # TODO: Change normalization to normalization per element
@@ -155,7 +160,7 @@ def scan_traces(*traces, model = None, n_features = 400, shift = 10, batch_size 
 
     # Get sliding window arrays
     l_windows = []
-    for x in traces:
+    for x in _traces:
         l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
 
     w_length = min([x.shape[0] for x in l_windows])
@@ -163,26 +168,27 @@ def scan_traces(*traces, model = None, n_features = 400, shift = 10, batch_size 
     # Prepare data
     windows = np.zeros((w_length, n_features, len(l_windows)))
 
-    for i in range(len(l_windows)):
-        windows[:, :, i] = l_windows[i][:w_length]
+    for _i in range(len(l_windows)):
+        windows[:, :, _i] = l_windows[_i][:w_length]
 
     normalize_windows_per_trace(windows)
 
     # Predict
-    scores = model.predict(windows, verbose = False, batch_size = batch_size)
+    _scores = model.predict(windows, verbose = False, batch_size = batch_size)
 
     # Plot
     # if args and args.plot_positives:
-    # plot_threshold_scores(scores, windows, params['threshold'], file_name, params['plot_labels'])
+    #     plot_threshold_scores(scores, windows, params['threshold'], file_name, params['plot_labels'])
 
     # Save scores
     # if args and args.save_positives:
-        # save_threshold_scores(scores, windows, params['threshold'], params['positives_h5_path'], params['save_h5_labels'])
+    #     save_threshold_scores(scores, windows, params['threshold'],
+    #                           params['positives_h5_path'], params['save_h5_labels'])
 
-    return scores
+    return _scores
 
 
-def restore_scores(scores, shape, shift):
+def restore_scores(_scores, shape, shift):
     """
     Restores scores to original size using linear interpolation.
 
@@ -192,32 +198,32 @@ def restore_scores(scores, shape, shift):
     shift  -- sliding windows shift
     """
     new_scores = np.zeros(shape)
-    for i in range(1, scores.shape[0]):
+    for i in range(1, _scores.shape[0]):
 
-        for j in range(scores.shape[1]):
+        for j in range(_scores.shape[1]):
 
             start_i = (i - 1) * shift
             end_i = i * shift
             if end_i >= shape[0]:
                 end_i = shape[0] - 1
 
-            new_scores[start_i : end_i, j] = np.linspace(scores[i - 1, j], scores[i, j], shift + 1)[:end_i - start_i]
+            new_scores[start_i : end_i, j] = np.linspace(_scores[i - 1, j], _scores[i, j], shift + 1)[:end_i - start_i]
 
     return new_scores
 
 
-def get_positives(scores, peak_indx, other_indxs, peak_dist = 10000, avg_window_half_size = 100, min_threshold = 0.8):
+def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_half_size = 100, min_threshold = 0.8):
     """
     Returns positive prediction list in format: [[sample, pseudo-probability], ...]
     """
-    positives = []
+    _positives = []
 
-    x = scores[:, peak_indx]
+    x = _scores[:, peak_idx]
     peaks = find_peaks(x, distance = peak_dist, height=[min_threshold, 1.])
 
-    for i in range(len(peaks[0])):
+    for _i in range(len(peaks[0])):
 
-        start_id = peaks[0][i] - avg_window_half_size
+        start_id = peaks[0][_i] - avg_window_half_size
         if start_id < 0:
             start_id = 0
 
@@ -230,9 +236,8 @@ def get_positives(scores, peak_indx, other_indxs, peak_dist = 10000, avg_window_
         peak_mean = x[start_id : end_id].mean()
 
         means = []
-        for indx in other_indxs:
-
-            means.append(scores[:, indx][start_id : end_id].mean())
+        for idx in other_idxs:
+            means.append(_scores[:, idx][start_id : end_id].mean())
 
         is_max = True
         for m in means:
@@ -241,18 +246,18 @@ def get_positives(scores, peak_indx, other_indxs, peak_dist = 10000, avg_window_
                 is_max = False
 
         if is_max:
-            positives.append([peaks[0][i], peaks[1]['peak_heights'][i]])
+            _positives.append([peaks[0][_i], peaks[1]['peak_heights'][_i]])
 
-    return positives
+    return _positives
 
 
-def print_results(detected_peaks, filename):
+def print_results(_detected_peaks, filename):
     """
     Prints out peaks in the file.
     """
     with open(filename, 'a') as f:
 
-        for record in detected_peaks:
+        for record in _detected_peaks:
 
             line = ''
             # Print wave type
@@ -281,12 +286,91 @@ def print_results(detected_peaks, filename):
             f.write(line)
 
 
+def parse_archive_csv(path):
+    """
+    Parses .csv file with archive filenames. Returns list of filename lists: [[archive1, archive2, archive3], ...]
+    :param path:
+    :return:
+    """
+    return None  # TODO: FINISH
+
+
+def load_transformer(weights_path):
+    """
+    Loads standard ST model.
+    :param weights_path: Path to weights file.
+    :return:
+    """
+    _model = st.seismo_transformer(maxlen = 400,
+                                   patch_size = 25,
+                                   num_channels = 3,
+                                   d_model = 48,
+                                   num_heads = 8,
+                                   ff_dim_factor = 4,
+                                   layers_depth = 8,
+                                   num_classes = 3,
+                                   drop_out_rate = 0.1)
+
+    _model.load_weights(weights_path)
+
+    _model.compile(optimizer = keras.optimizer.Adam(learning_rate = 0.001),
+                   loss = keras.losses.SparseCategoricalCrossentropy(),
+                   metrics = [keras.metrics.SparseCategoricalAccuracy()])
+
+    return _model
+
+
+def load_favor(weights_path):
+    """
+    Loads fast-attention ST model variant.
+    :param weights_path:
+    :return:
+    """
+    _model = st.seismo_performer_with_spec(maxlen = 400,
+                                           nfft = 128,
+                                           patch_size_1 = 9,
+                                           patch_size_2 = 5,
+                                           num_channels = 3,
+                                           num_patches = 13,
+                                           d_model = 48,
+                                           num_heads = 4,
+                                           ff_dim_factor = 4,
+                                           layers_depth = 8,
+                                           num_classes = 3,
+                                           drop_out_rate = 0.1)
+
+    _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+                   loss = keras.losses.SparseCategoricalCrossentropy(),
+                   metrics = [keras.metrics.SparseCategoricalAccuracy()],)
+
+    _model = load_weights(weights_path)
+
+    return _model
+
+
 if __name__ == '__main__':
 
-    args = object
+    # Command line arguments parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', '-w', help = 'Path to model weights', type = str)
+    parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant.', type = bool,
+                        action = 'store_true')
+    parser.add_argument('--input', '-i', help = 'Path to .csv file with archive names.', type = str)
+    parser.add_argument('--out', '-o', help = 'Path to output file with predictions.', type = str)
+    parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95',
+                        type = float, default = 0.95)
+    parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', type = bool,
+                        action = 'store_true')
 
-    # TODO: initialize archive lists [[N_path, E_path, Z_path], ...] into archives variable
-    archives = []
+    args = parser.parse_args()  # parse arguments
+
+    archives = parse_archive_csv(args.input)  # parse archive names
+
+    # Load model
+    if not args.favor:
+        model = load_transformer(args.weights)
+    else:
+        model = load_favor(args.weights)
 
     # Main loop
     for l_archives in archives:
@@ -370,7 +454,7 @@ if __name__ == '__main__':
                 batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq) for trace in traces]
 
                 scores = scan_traces(*batches,
-                                     model = model, params = args)  # predict
+                                     model = model, args = args)  # predict
 
                 if scores is None:
                     continue
@@ -389,8 +473,8 @@ if __name__ == '__main__':
 
                     positives = get_positives(restored_scores,
                                               args.positive_labels[label],
-                                                      other_labels,
-                                                      min_threshold = args.threshold)
+                                              other_labels,
+                                              min_threshold = args.threshold)
 
                     predicted_labels[label] = positives
 
