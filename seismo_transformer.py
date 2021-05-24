@@ -358,6 +358,7 @@ def seismo_performer_with_spec(
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
+            hop_length=8,
             input_data_format='channels_last',
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
