@@ -103,12 +103,12 @@ def sliding_window(data, n_features, n_shift):
 
     windows = np.zeros(shape)
 
-    for i in range(win_count):
+    for _i in range(win_count):
 
-        _start_pos = i * n_shift
-        _end_pos = start_pos + n_features
+        _start_pos = _i * n_shift
+        _end_pos = _start_pos + n_features
 
-        windows[i][:] = data[_start_pos : _end_pos]
+        windows[_i][:] = data[_start_pos : _end_pos]
 
     return windows.copy()
 
@@ -219,6 +219,7 @@ def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_h
     _positives = []
 
     x = _scores[:, peak_idx]
+
     peaks = find_peaks(x, distance = peak_dist, height=[min_threshold, 1.])
 
     for _i in range(len(peaks[0])):
@@ -251,6 +252,14 @@ def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_h
     return _positives
 
 
+def truncate(f, n):
+    """
+    Floors float to n-digits after comma.
+    """
+    import math
+    return math.floor(f * 10 ** n) / 10 ** n
+
+
 def print_results(_detected_peaks, filename):
     """
     Prints out peaks in the file.
@@ -266,21 +275,9 @@ def print_results(_detected_peaks, filename):
             # Print pseudo-probability
             line += f'{truncate(record["pseudo-probability"], 2):1.2f} '
 
-            # Print station
-            line += f'{record["station"]} '
-
-            # Print location
-            line += f'{record["location_code"]} '
-
-            # Print net code
-            line += f'{record["network_code"]}   '
-
             # Print time
             dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S")
-            line += f'{dt_str}   '
-
-            # Print channels
-            line += f'{[ch for ch in record["channels"]]}\n'
+            line += f'{dt_str}\n'
 
             # Write
             f.write(line)
@@ -288,11 +285,18 @@ def print_results(_detected_peaks, filename):
 
 def parse_archive_csv(path):
     """
-    Parses .csv file with archive filenames. Returns list of filename lists: [[archive1, archive2, archive3], ...]
+    Parses archives names file. Returns list of filename lists: [[archive1, archive2, archive3], ...]
     :param path:
     :return:
     """
-    return None  # TODO: FINISH
+    with open(path) as f:
+        lines = f.readlines()
+
+    _archives = []
+    for line in lines:
+        _archives.append([x for x in line.split()])
+
+    return _archives
 
 
 def load_transformer(weights_path):
@@ -311,11 +315,9 @@ def load_transformer(weights_path):
                                    num_classes = 3,
                                    drop_out_rate = 0.1)
 
-    _model.summary()
-
     _model.load_weights(weights_path)
 
-    _model.compile(optimizer = keras.optimizer.Adam(learning_rate = 0.001),
+    _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
                    loss = keras.losses.SparseCategoricalCrossentropy(),
                    metrics = [keras.metrics.SparseCategoricalAccuracy()])
 
@@ -345,31 +347,34 @@ def load_favor(weights_path):
                    loss = keras.losses.SparseCategoricalCrossentropy(),
                    metrics = [keras.metrics.SparseCategoricalAccuracy()],)
 
-    _model = load_weights(weights_path)
+    _model.load_weights(weights_path)
 
     return _model
 
 
 if __name__ == '__main__':
 
+    # TODO: make input as non-optional argument
+
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', '-w', help = 'Path to model weights')
-    parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant.', action = 'store_true')
-    parser.add_argument('--input', '-i', help = 'Path to .csv file with archive names.')
-    parser.add_argument('--out', '-o', help = 'Path to output file with predictions.')
+    parser.add_argument('input', help = 'Path to .csv file with archive names')
+    parser.add_argument('weights', help = 'Path to model weights')
+    parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant', action = 'store_true')
+    parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
+    parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
 
     args = parser.parse_args()  # parse arguments
 
-    # Set some default arguments
-    if not args.weights:
+    model_labels = {'P': 0, 'S': 1, 'N': 2}
+    positive_labels = {'P': 0, 'S': 1}
 
-        if not args.favor:
-            args.weights = 'WEIGHTS/model.sac_full.h5'
-        else:
-            args.weights = 'WEIGHTS/favor_weight_placeholder.h5'
+    frequency = 100.
+
+    args.threshold = float(args.threshold)
+    args.batch_size = int(args.batch_size)
 
     archives = parse_archive_csv(args.input)  # parse archive names
 
@@ -460,26 +465,25 @@ if __name__ == '__main__':
 
                 batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq) for trace in traces]
 
-                scores = scan_traces(*batches,
-                                     model = model, args = args)  # predict
+                scores = scan_traces(*batches, model = model, batch_size = args.batch_size)  # predict
 
                 if scores is None:
                     continue
 
                 # TODO: window step 10 should be in params, including the one used in predict.scan_traces
-                restored_scores = restore_scores(scores, (len(batches[0]), len(args.model_labels)), 10)
+                restored_scores = restore_scores(scores, (len(batches[0]), len(model_labels)), 10)
 
                 # Get indexes of predicted events
                 predicted_labels = {}
-                for label in args.positive_labels:
+                for label in positive_labels:
 
                     other_labels = []
-                    for k in args.model_labels:
+                    for k in model_labels:
                         if k != label:
-                            other_labels.append(args.model_labels[k])
+                            other_labels.append(model_labels[k])
 
                     positives = get_positives(restored_scores,
-                                              args.positive_labels[label],
+                                              positive_labels[label],
                                               other_labels,
                                               min_threshold = args.threshold)
 
@@ -495,7 +499,7 @@ if __name__ == '__main__':
 
                         # Get prediction UTCDateTime and model pseudo-probability
                         # TODO: why params['frequency'] here but freq = traces[0].stats.frequency before?
-                        tmp_prediction_dates.append([starttime + (prediction[0] / params['frequency']), prediction[1]])
+                        tmp_prediction_dates.append([starttime + (prediction[0] / frequency), prediction[1]])
 
                     predicted_timestamps[label] = tmp_prediction_dates
 
@@ -505,12 +509,8 @@ if __name__ == '__main__':
 
                         prediction = {'type': typ,
                                       'datetime': pred[0],
-                                      'pseudo-probability': pred[1],
-                                      'channels': streams_channels,
-                                      'station': archive_data['meta']['station'],
-                                      'location_code': archive_data['meta']['location_code'],
-                                      'network_code': archive_data['meta']['network_code']}
+                                      'pseudo-probability': pred[1]}
 
                         detected_peaks.append(prediction)
 
-                print_results(detected_peaks, args.output_file)
+                print_results(detected_peaks, args.out)
