@@ -10,6 +10,23 @@ In this repository we release implementation of the model, the model configurati
 
 # How to fine-tune
 
+# How to predict on archives
+
+`python archive_scan.py [OPTIONS] <input_file> <model_weights_path>`
+
+Where `input_file` contains archive filenames (recommended channel order: `N, E, Z`) 
+separated by a whitespace and daily archive groups separated by newlines.
+
+OPTIONS:
+<br>`-h` - display help message
+<br>`--favor` - use fast attention model variant
+<br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
+<br>`--threshold` VALUE - positive prediction threshold, default: *0.95*
+<br>`--batch_size` VALUE - batch size, default: *500 000* samples
+
+Test example:
+`python archive_scan.py test/nysh_archives.txt WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
+
 # Test datasets
 
 [Sakhalin (HDF5, 127 MB)](https://drive.google.com/file/d/1dH2JF9TQmyB6GpIB_dY1jiWAI5uqp6ED/view?usp=sharing). Total samples 13689: P 4137, S 4776, Noise 4776.
