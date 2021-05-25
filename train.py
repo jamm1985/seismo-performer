@@ -50,14 +50,14 @@ model.save_weights('WEIGHTS/model.240K.V2.hd5', save_format='h5')
 model_with_spec = seismo_transformer_with_spec(
     maxlen=400,
     nfft=128,
-    patch_size_1=9,
-    patch_size_2=5,
+    patch_size_1=35,
+    patch_size_2=13,
     num_channels=3,
-    num_patches=13,
-    d_model=32,
+    num_patches=5,
+    d_model=80,
     num_heads=8,
     ff_dim_factor=4,
-    layers_depth=8,
+    layers_depth=1,
     num_classes=3,
     drop_out_rate=0.1)
 
@@ -78,14 +78,14 @@ history = model.fit(
 model_with_spec = seismo_performer_with_spec(
     maxlen=400,
     nfft=128,
-    patch_size_1=9,
+    patch_size_1=5,
     patch_size_2=5,
     num_channels=3,
-    num_patches=13,
-    d_model=48,
+    num_patches=91,
+    d_model=72,
     num_heads=8,
     ff_dim_factor=4,
-    layers_depth=8,
+    layers_depth=1,
     num_classes=3,
     drop_out_rate=0.1)
 
@@ -104,6 +104,7 @@ X_train, X_test, y_train, y_test =\
 X_train, X_test, y_train, y_test =\
     load_test_train_data('/Volumes/ML_SEISMO_D/ML_DATASETS_SAKH_DAG/2020-09-10-SAKHALIN_1_FIXED.hdf5', 0.3)
 
+model_with_spec.load_weights('/Users/jamm/Downloads/web/weights_model_performer_with_spec.96K..CALI.V1.hd5')
 
 print("Fit model on training data")
 history = model_with_spec.fit(

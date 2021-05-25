@@ -255,15 +255,15 @@ def seismo_transformer(
 
 def seismo_transformer_with_spec(
         maxlen=400,
-        patch_size_1=2,
-        patch_size_2=3,
+        patch_size_1=35,
+        patch_size_2=13,
         num_channels=3,
-        num_patches = 40,
+        num_patches = 5,
         nfft=128,
-        d_model=96,
+        d_model=80,
         num_heads=8,
         ff_dim_factor=4,
-        layers_depth=8,
+        layers_depth=1,
         num_classes=3,
         drop_out_rate=0.1):
     """The model for P/S/N waves classification using ViT approach
@@ -291,6 +291,7 @@ def seismo_transformer_with_spec(
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
+            hop_length=8,
             input_data_format='channels_last',
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
