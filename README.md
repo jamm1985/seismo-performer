@@ -14,15 +14,27 @@ In this repository we release implementation of the model, the model configurati
 
 `python archive_scan.py [OPTIONS] <input_file> <model_weights_path>`
 
-Where `input_file` contains archive filenames (recommended channel order: `N, E, Z`) 
+### Input file
+`input_file` contains archive filenames (recommended channel order: `N, E, Z`) 
 separated by a whitespace and daily archive groups separated by newlines.
 
-OPTIONS:
-<br>`-h` - display help message
+`input_file` example:
+
+```
+test/archives/NYSH.IM.00.EHN.2021.091 test/archives/NYSH.IM.00.EHE.2021.091 test/archives/NYSH.IM.00.EHZ.2021.091
+test/archives/NYSH.IM.00.EHN.2021.092 test/archives/NYSH.IM.00.EHE.2021.092 test/archives/NYSH.IM.00.EHZ.2021.092
+```
+
+Note that files are passed to the model in the order they are specified in `input_file`. 
+Advised channel order: `N, E, Z`.
+
+### Options:
+`-h` - display help message
 <br>`--favor` - use fast attention model variant
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*
 <br>`--batch_size` VALUE - batch size, default: *500 000* samples
+
 
 Test example:
 `python archive_scan.py test/nysh_archives.txt WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
