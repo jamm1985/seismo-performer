@@ -16,7 +16,7 @@ In this repository we release implementation of the model, the model configurati
 
 ### Input file
 `input_file` contains archive filenames (recommended channel order: `N, E, Z`) 
-separated by a whitespace and daily archive groups separated by newlines.
+separated by a whitespace. Every new archive group should be separated by a newline.
 
 `input_file` example:
 
