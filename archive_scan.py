@@ -11,6 +11,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import seismo_transformer as st
 from tensorflow import keras
 
+import sys
+
 
 def pre_process_stream(stream):
     """
@@ -357,13 +359,15 @@ def load_favor(weights_path):
 
 if __name__ == '__main__':
 
-    # TODO: make input as non-optional argument
+    # TODO: PARSE ARGUMENTS BEFORE LOADING TENSORFLOW
 
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help = 'Path to .csv file with archive names')
-    parser.add_argument('weights', help = 'Path to model weights')
+    parser.add_argument('--weights', '-w', help = 'Path to model weights', default = None)
     parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant', action = 'store_true')
+    parser.add_argument('--model', help = 'Custom model loader import, default: None', default = None)
+    parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
@@ -371,6 +375,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()  # parse arguments
 
+    # Validate arguments
+    if not args.model and not args.weights:
+
+        parser.print_help()
+        print()
+        sys.stderr.write('ERROR: No --weights specified, either specify --weights argument or use'
+                         ' custom model loader with --model flag!')
+        sys.exit(2)
+
+    # Set default variables
+    # TODO: make them customisable through command line arguments
     model_labels = {'P': 0, 'S': 1, 'N': 2}
     positive_labels = {'P': 0, 'S': 1}
 
@@ -382,7 +397,33 @@ if __name__ == '__main__':
     archives = parse_archive_csv(args.input)  # parse archive names
 
     # Load model
-    if not args.favor:
+    if args.model:
+
+        # TODO: Check if loader_argv is set and check (if possible) loader_call if it receives arguments
+        #       Print warning then if loader_argv is not set and print help message about custom models
+
+        import importlib
+
+        model_loader = importlib.import_module(args.model)  # import loader module
+        loader_call = getattr(model_loader, 'load_model')  # import loader function
+
+        # Parse loader arguments
+        loader_argv = args.loader_argv
+
+        # TODO: Improve parsing to support quotes and whitespaces inside said quotes
+        #       Also parse whitespaces between argument and key
+        argv_split = loader_argv.strip().split()
+        argv_dict = {}
+
+        for pair in argv_split:
+
+            spl = pair.split('=')
+            if len(spl) == 2:
+                argv_dict[spl[0]] = spl[1]
+
+        model = loader_call(**argv_dict)
+
+    elif not args.favor:
         model = load_transformer(args.weights)
     else:
         model = load_favor(args.weights)
