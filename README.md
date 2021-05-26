@@ -44,24 +44,74 @@ S 0.99 01.04.2021 21:38:54
 
 ### Options
 `-h` - display help message
+<br>`--weights`, `-w` FILENAME - path to model weights file
 <br>`--favor` - use fast attention model variant
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*
 <br>`--batch_size` VALUE - batch size, default: *500 000* samples
 
-### Model selection
-To select fast-attention variant of the Seismo Transformer use --favor flag. 
-Regular Seismo Transformer will be used otherwise.
+### Model selection and custom models
+
+#### Seismo-Transformer
+
+To select fast-attention variant of the Seismo-Transformer use --favor flag. 
+Regular Seismo-Transformer will be used otherwise.
+
+#### Custom models
+It is possible to predict with custom models, in order to do so, follow these steps:
+
+*1. Create model loader*
+
+Model loader is basically a function with name `load_model` inside a python module.
+For example `test/keras_loader.py` provides a custom loader for tensorflow.keras models, 
+saved in *.json* format:
+
+```aidl
+import tensorflow as tf
+from tensorflow.keras.models import model_from_json
+
+
+def load_model(model_path, weights_path):
+
+    print('Keras loader call!')
+    print('model_path = ', model_path)
+    print('weights_path = ', weights_path)
+
+    json_file = open(model_path, 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+
+    model = model_from_json(loaded_model_json, custom_objects = {"tf": tf})
+
+    model.load_weights(weights_path)
+
+    return model
+```
+
+*2. Use --model option with archive_scan.py call*
+
+Using *--model* option followed by loader module import path will let the script know, 
+that using a custom model loader is required.
+Function `load_model` inside specified module then will be called.
+`load_model` arguments can be provided using *--loader_argv* option.
+*--loader_argv* should be a string of `key=value` pairs separated by a whitespace.
+
+#### Custom model example
+`python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
 
 ### Examples
 Scan archives using fast-attention model, with detection threshold 0.98:
-<br>`python archive_scan.py test/nysh_archives.txt WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
+<br>`python archive_scan.py test/nysh_archives.txt -w WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
 
 Scan archives using regular model, with detection threshold 0.95:
-<br>`python archive_scan.py test/nysh_archives.txt WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
+<br>`python archive_scan.py test/nysh_archives.txt -w WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
+
+Using keras .json model:
+<br>`python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
 
 Display help message:
 <br>`python archive_scan.py -h`
+
 
 # Test datasets
 
