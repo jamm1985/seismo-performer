@@ -4,8 +4,11 @@ from obspy import read
 import obspy.core as oc
 from scipy.signal import find_peaks
 
-import seismo_transformer as st
+# Silence tensorflow warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import seismo_transformer as st
 from tensorflow import keras
 
 
@@ -385,7 +388,7 @@ if __name__ == '__main__':
         model = load_favor(args.weights)
 
     # Main loop
-    for l_archives in archives:
+    for n_archive, l_archives in enumerate(archives):
 
         # Read data
         streams = []
@@ -426,12 +429,25 @@ if __name__ == '__main__':
         if len(np.unique(np.array(lengths))) != 1:
             continue
 
-        # Predict
         n_traces = len(streams[0])
+
+        # Progress bar preparations
+        total_batch_count = 0
         for i in range(n_traces):
 
-            # TODO: Improve progress bar to render by batch inside predict(...)
-            progress_bar(i / n_traces, 40, add_space_around = False)
+            traces = [st[i] for st in streams]
+
+            l_trace = traces[0].data.shape[0]
+            last_batch = l_trace % args.batch_size
+            batch_count = l_trace // args.batch_size + 1 \
+                if last_batch \
+                else l_trace // args.batch_size
+
+            total_batch_count += batch_count
+
+        # Predict
+        current_batch_global = 0
+        for i in range(n_traces):
 
             traces = [st[i] for st in streams]  # get traces
 
@@ -464,6 +480,12 @@ if __name__ == '__main__':
                 t_start = traces[0].stats.starttime
 
                 batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq) for trace in traces]
+
+                # Progress bar
+                progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                             prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                             postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
+                current_batch_global += 1
 
                 scores = scan_traces(*batches, model = model, batch_size = args.batch_size)  # predict
 
@@ -514,3 +536,5 @@ if __name__ == '__main__':
                         detected_peaks.append(prediction)
 
                 print_results(detected_peaks, args.out)
+
+            print('')
