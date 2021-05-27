@@ -4,9 +4,14 @@ from obspy import read
 import obspy.core as oc
 from scipy.signal import find_peaks
 
-import seismo_transformer as st
+# Silence tensorflow warnings
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import seismo_transformer as st
 from tensorflow import keras
+
+import sys
 
 
 def pre_process_stream(stream):
@@ -113,6 +118,22 @@ def sliding_window(data, n_features, n_shift):
     return windows.copy()
 
 
+def normalize_windows_global(windows):
+    """
+    Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
+    :param windows:
+    :return:
+    """
+    # Shape (windows_number, n_features, channels_number)
+    n_win = windows.shape[0]
+    ch_num = windows.shape[2]
+
+    for _i in range(n_win):
+
+        win_max = np.max(np.abs(windows[_i, :, :]))
+        windows[_i, :, :] = windows[_i, :, :] / win_max
+
+
 def normalize_windows_per_trace(windows):
     """
     Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
@@ -171,7 +192,11 @@ def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size
     for _i in range(len(l_windows)):
         windows[:, :, _i] = l_windows[_i][:w_length]
 
-    normalize_windows_per_trace(windows)
+    # Global max normalization:
+    normalize_windows_global(windows)
+
+    # Per-channel normalization:
+    # normalize_windows_per_trace(windows)
 
     # Predict
     _scores = model.predict(windows, verbose = False, batch_size = batch_size)
@@ -354,13 +379,15 @@ def load_favor(weights_path):
 
 if __name__ == '__main__':
 
-    # TODO: make input as non-optional argument
+    # TODO: PARSE ARGUMENTS BEFORE LOADING TENSORFLOW
 
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help = 'Path to .csv file with archive names')
-    parser.add_argument('weights', help = 'Path to model weights')
+    parser.add_argument('--weights', '-w', help = 'Path to model weights', default = None)
     parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant', action = 'store_true')
+    parser.add_argument('--model', help = 'Custom model loader import, default: None', default = None)
+    parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
@@ -368,6 +395,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()  # parse arguments
 
+    # Validate arguments
+    if not args.model and not args.weights:
+
+        parser.print_help()
+        print()
+        sys.stderr.write('ERROR: No --weights specified, either specify --weights argument or use'
+                         ' custom model loader with --model flag!')
+        sys.exit(2)
+
+    # Set default variables
+    # TODO: make them customisable through command line arguments
     model_labels = {'P': 0, 'S': 1, 'N': 2}
     positive_labels = {'P': 0, 'S': 1}
 
@@ -379,13 +417,39 @@ if __name__ == '__main__':
     archives = parse_archive_csv(args.input)  # parse archive names
 
     # Load model
-    if not args.favor:
+    if args.model:
+
+        # TODO: Check if loader_argv is set and check (if possible) loader_call if it receives arguments
+        #       Print warning then if loader_argv is not set and print help message about custom models
+
+        import importlib
+
+        model_loader = importlib.import_module(args.model)  # import loader module
+        loader_call = getattr(model_loader, 'load_model')  # import loader function
+
+        # Parse loader arguments
+        loader_argv = args.loader_argv
+
+        # TODO: Improve parsing to support quotes and whitespaces inside said quotes
+        #       Also parse whitespaces between argument and key
+        argv_split = loader_argv.strip().split()
+        argv_dict = {}
+
+        for pair in argv_split:
+
+            spl = pair.split('=')
+            if len(spl) == 2:
+                argv_dict[spl[0]] = spl[1]
+
+        model = loader_call(**argv_dict)
+
+    elif not args.favor:
         model = load_transformer(args.weights)
     else:
         model = load_favor(args.weights)
 
     # Main loop
-    for l_archives in archives:
+    for n_archive, l_archives in enumerate(archives):
 
         # Read data
         streams = []
@@ -426,12 +490,25 @@ if __name__ == '__main__':
         if len(np.unique(np.array(lengths))) != 1:
             continue
 
-        # Predict
         n_traces = len(streams[0])
+
+        # Progress bar preparations
+        total_batch_count = 0
         for i in range(n_traces):
 
-            # TODO: Improve progress bar to render by batch inside predict(...)
-            progress_bar(i / n_traces, 40, add_space_around = False)
+            traces = [st[i] for st in streams]
+
+            l_trace = traces[0].data.shape[0]
+            last_batch = l_trace % args.batch_size
+            batch_count = l_trace // args.batch_size + 1 \
+                if last_batch \
+                else l_trace // args.batch_size
+
+            total_batch_count += batch_count
+
+        # Predict
+        current_batch_global = 0
+        for i in range(n_traces):
 
             traces = [st[i] for st in streams]  # get traces
 
@@ -464,6 +541,12 @@ if __name__ == '__main__':
                 t_start = traces[0].stats.starttime
 
                 batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq) for trace in traces]
+
+                # Progress bar
+                progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                             prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                             postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
+                current_batch_global += 1
 
                 scores = scan_traces(*batches, model = model, batch_size = args.batch_size)  # predict
 
@@ -514,3 +597,5 @@ if __name__ == '__main__':
                         detected_peaks.append(prediction)
 
                 print_results(detected_peaks, args.out)
+
+            print('')
