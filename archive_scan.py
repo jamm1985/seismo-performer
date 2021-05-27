@@ -118,6 +118,22 @@ def sliding_window(data, n_features, n_shift):
     return windows.copy()
 
 
+def normalize_windows_global(windows):
+    """
+    Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
+    :param windows:
+    :return:
+    """
+    # Shape (windows_number, n_features, channels_number)
+    n_win = windows.shape[0]
+    ch_num = windows.shape[2]
+
+    for _i in range(n_win):
+
+        win_max = np.max(np.abs(windows[_i, :, :]))
+        windows[_i, :, :] = windows[_i, :, :] / win_max
+
+
 def normalize_windows_per_trace(windows):
     """
     Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
@@ -176,7 +192,11 @@ def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size
     for _i in range(len(l_windows)):
         windows[:, :, _i] = l_windows[_i][:w_length]
 
-    normalize_windows_per_trace(windows)
+    # Global max normalization:
+    normalize_windows_global(windows)
+
+    # Per-channel normalization:
+    # normalize_windows_per_trace(windows)
 
     # Predict
     _scores = model.predict(windows, verbose = False, batch_size = batch_size)
