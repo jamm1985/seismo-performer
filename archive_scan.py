@@ -1,5 +1,6 @@
 import argparse
 import numpy as np
+from numpy.lib.npyio import load
 from obspy import read
 import obspy.core as oc
 from scipy.signal import find_peaks
@@ -376,6 +377,22 @@ def load_favor(weights_path):
 
     return _model
 
+def load_cnn(weights_path):
+    """
+    Loads CNN model on top of spectrogram.
+    :param weights_path:
+    :return:
+    """
+    _model = st.model_cnn_spec(400,128)
+
+    _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
+                   loss = keras.losses.SparseCategoricalCrossentropy(),
+                   metrics = [keras.metrics.SparseCategoricalAccuracy()],)
+
+    _model.load_weights(weights_path)
+
+    return _model
+
 
 if __name__ == '__main__':
 
@@ -386,6 +403,7 @@ if __name__ == '__main__':
     parser.add_argument('input', help = 'Path to .csv file with archive names')
     parser.add_argument('--weights', '-w', help = 'Path to model weights', default = None)
     parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant', action = 'store_true')
+    parser.add_argument('--cnn', help = 'Use simple CNN model on top of spectrogram', action = 'store_true')
     parser.add_argument('--model', help = 'Custom model loader import, default: None', default = None)
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
@@ -443,6 +461,8 @@ if __name__ == '__main__':
 
         model = loader_call(**argv_dict)
 
+    elif args.cnn:
+        model = load_cnn(args.weights)
     elif not args.favor:
         model = load_transformer(args.weights)
     else:

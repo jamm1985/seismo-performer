@@ -458,3 +458,43 @@ def seismo_performer_hybrid(
     outputs = layers.Dense(num_classes, activation='softmax')(x)
     model = keras.Model(inputs=inputs, outputs=outputs)
     return model
+
+
+def model_cnn_spec(timewindow, nfft):
+    """build very base CNN model on top of spectrogram.
+    :returns: keras model object 
+    """
+    # std_dev_input = 0.001
+    inputs = keras.Input(shape=(timewindow, 3))
+    x = STFT(n_fft=nfft,
+            window_name=None,
+            pad_end=False,
+            hop_length=8,
+            input_data_format='channels_last',
+            output_data_format='channels_last',)(inputs)
+    x = Magnitude()(x)
+    x = MagnitudeToDecibel()(x)
+    #x = tf.keras.layers.Lambda(lambda image: tf.image.resize(image, (60,60)))(x)
+    x = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), padding="same")(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.activations.relu(x)
+    x = tf.keras.layers.MaxPooling2D(pool_size=(2,2))(x)
+    x = tf.keras.layers.Conv2D(filters=64, kernel_size=(3,3), padding="same")(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.activations.relu(x)
+    x = tf.keras.layers.MaxPooling2D(pool_size=(2,2))(x)
+    x = tf.keras.layers.Conv2D(filters=128, kernel_size=(3,3), padding="same")(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.activations.relu(x)
+    x = tf.keras.layers.MaxPooling2D(pool_size=(2,2))(x)
+    x = tf.keras.layers.Flatten()(x)
+    x = tf.keras.layers.Dense(80, activation="relu")(x)
+    outputs = tf.keras.layers.Dense(3, activation="softmax")(x)
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
+    model.compile(
+        optimizer=keras.optimizers.Adam(),  # Optimizer
+        # Loss function to minimize
+        loss=keras.losses.SparseCategoricalCrossentropy(),
+        # List of metrics to monitor
+        metrics=[keras.metrics.SparseCategoricalAccuracy()],)
+    return model
