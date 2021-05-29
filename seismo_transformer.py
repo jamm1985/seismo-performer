@@ -491,10 +491,4 @@ def model_cnn_spec(timewindow, nfft):
     x = tf.keras.layers.Dense(80, activation="relu")(x)
     outputs = tf.keras.layers.Dense(3, activation="softmax")(x)
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
-    model.compile(
-        optimizer=keras.optimizers.Adam(),  # Optimizer
-        # Loss function to minimize
-        loss=keras.losses.SparseCategoricalCrossentropy(),
-        # List of metrics to monitor
-        metrics=[keras.metrics.SparseCategoricalAccuracy()],)
     return model
