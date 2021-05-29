@@ -365,7 +365,7 @@ def load_favor(weights_path):
                                             d_model=48,
                                             num_heads=4,
                                             ff_dim_factor=4,
-                                            layers_depth=1,
+                                            layers_depth=2,
                                             num_classes=3,
                                             drop_out_rate=0.1)
 
