@@ -15,7 +15,7 @@ from tensorflow import keras
 import sys
 
 
-def pre_process_stream(stream):
+def pre_process_stream(stream, no_filter = False, no_detrend = False):
     """
     Does preprocessing on the stream (changes it's frequency), does linear detrend and
     highpass filtering with frequency of 2 Hz.
@@ -24,8 +24,10 @@ def pre_process_stream(stream):
     stream      -- obspy.core.stream object to pre process
     frequency   -- required frequency
     """
-    stream.detrend(type="linear")
-    stream.filter(type="highpass", freq = 2)
+    if not no_detrend:
+        stream.detrend(type="linear")
+    if not no_filter:
+        stream.filter(type="highpass", freq = 2)
 
     frequency = 100.
     required_dt = 1. / frequency
@@ -410,6 +412,8 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
     parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
+    parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
+    parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
 
@@ -460,13 +464,13 @@ if __name__ == '__main__':
                 argv_dict[spl[0]] = spl[1]
 
         model = loader_call(**argv_dict)
-
+    # TODO: Print loaded model info. Also add flag --inspect to print model summary.
     elif args.cnn:
         model = load_cnn(args.weights)
-    elif not args.favor:
-        model = load_transformer(args.weights)
-    else:
+    elif args.favor:
         model = load_favor(args.weights)
+    else:
+        model = load_transformer(args.weights)
 
     # Main loop
     for n_archive, l_archives in enumerate(archives):
@@ -478,7 +482,7 @@ if __name__ == '__main__':
 
         # Pre-process data
         for st in streams:
-            pre_process_stream(st)
+            pre_process_stream(st, args.no_filter, args.no_detrend)
 
         # Cut archives to the same length
         max_start_time = None
