@@ -1,402 +1,14 @@
 import argparse
 import numpy as np
-from numpy.lib.npyio import load
 from obspy import read
-import obspy.core as oc
-from scipy.signal import find_peaks
+import sys
 
 # Silence tensorflow warnings
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-import seismo_transformer as st
-from tensorflow import keras
-
-import sys
-
-
-def pre_process_stream(stream):
-    """
-    Does preprocessing on the stream (changes it's frequency), does linear detrend and
-    highpass filtering with frequency of 2 Hz.
-
-    Arguments:
-    stream      -- obspy.core.stream object to pre process
-    frequency   -- required frequency
-    """
-    stream.detrend(type="linear")
-    stream.filter(type="highpass", freq = 2)
-
-    frequency = 100.
-    required_dt = 1. / frequency
-    dt = stream[0].stats.delta
-
-    if dt != required_dt:
-        stream.interpolate(frequency)
-
-
-def progress_bar(progress, characters_count = 20,
-                 erase_line = True,
-                 empty_bar = '.', filled_bar = '=', filled_edge = '>',
-                 prefix = '', postfix = '',
-                 add_space_around = True):
-    """
-    Prints progress bar.
-    :param progress: percentage (0..1) of progress, or int number of characters filled in progress bar.
-    :param characters_count: length of the bar in characters.
-    :param erase_line: preform return carriage.
-    :param empty_bar: empty bar character.
-    :param filled_bar: progress character.
-    :param filled_edge: progress character on the borderline between progressed and empty,
-                        set to None to disable.
-    :param prefix: progress bar prefix.
-    :param postfix: progress bar postfix.
-    :param add_space_around: add space after prefix and before postfix.
-    :return:
-    """
-
-    space_characters = ' \t\n'
-    if add_space_around:
-        if len(prefix) > 0 and prefix[-1] not in space_characters:
-            prefix += ' '
-
-        if len(postfix) > 0 and postfix[0] not in space_characters:
-            postfix = ' ' + postfix
-
-    if erase_line:
-        print('\r', end = '')
-
-    progress_num = int(characters_count * progress)
-    if filled_edge is None:
-        print(prefix + filled_bar * progress_num + empty_bar * (characters_count - progress_num) + postfix, end = '')
-    else:
-        bar_str = prefix + filled_bar * progress_num
-        bar_str += filled_edge * min(characters_count - progress_num, 1)
-        bar_str += empty_bar * (characters_count - progress_num - 1)
-        bar_str += postfix
-
-        print(bar_str, end = '')
-
-
-def cut_traces(*_traces):
-    """
-    Cut traces to same timeframe (same start time and end time). Returns list of new traces.
-
-    Positional arguments:
-    Any number of traces (depends on the amount of channels). Unpack * if passing a list of traces.
-    e.g. scan_traces(*trs)
-    """
-    _start_time = max([x.stats.starttime for x in _traces])
-    _end_time = max([x.stats.endtime for x in _traces])
-
-    return_traces = [x.slice(_start_time, _end_time) for x in _traces]
-
-    return return_traces
-
-
-def sliding_window(data, n_features, n_shift):
-    """
-    Return NumPy array of sliding windows. Which is basically a view into a copy of original data array.
-
-    Arguments:
-    data       -- numpy array to make a sliding windows on
-    n_features -- length in samples of the individual window
-    n_shift    -- shift between windows starting points
-    """
-    # Get sliding windows shape
-    win_count = np.floor(data.shape[0]/n_shift - n_features/n_shift + 1).astype(int)
-    shape = (win_count, n_features)
-
-    windows = np.zeros(shape)
-
-    for _i in range(win_count):
-
-        _start_pos = _i * n_shift
-        _end_pos = _start_pos + n_features
-
-        windows[_i][:] = data[_start_pos : _end_pos]
-
-    return windows.copy()
-
-
-def normalize_windows_global(windows):
-    """
-    Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
-    :param windows:
-    :return:
-    """
-    # Shape (windows_number, n_features, channels_number)
-    n_win = windows.shape[0]
-    ch_num = windows.shape[2]
-
-    for _i in range(n_win):
-
-        win_max = np.max(np.abs(windows[_i, :, :]))
-        windows[_i, :, :] = windows[_i, :, :] / win_max
-
-
-def normalize_windows_per_trace(windows):
-    """
-    Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
-    :param windows:
-    :return:
-    """
-    # Shape (windows_number, n_features, channels_number)
-    n_win = windows.shape[0]
-    ch_num = windows.shape[2]
-
-    for _i in range(n_win):
-
-        for _j in range(ch_num):
-
-            win_max = np.max(np.abs(windows[_i, :, _j]))
-            windows[_i, :, _j] = windows[_i, :, _j] / win_max
-
-
-def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size = 100):
-    """
-    Get predictions on the group of traces.
-
-    Positional arguments:
-    Any number of traces (depends on the amount of channels). Unpack * if passing a list of traces.
-    e.g. scan_traces(*trs)
-
-    Keyword arguments
-    model            -- NN model
-    n_features       -- number of input features in a single channel
-    shift            -- amount of samples between windows
-    global_normalize -- normalize globaly all traces if True or locally if False
-    batch_size       -- model.fit batch size
-    """
-    # Check input types
-    for x in _traces:
-        if type(x) != oc.trace.Trace:
-            raise TypeError('traces should be a list or containing obspy.core.trace.Trace objects')
-
-    # Cut all traces to a same timeframe
-    _traces = cut_traces(*_traces)
-
-    # Normalize
-    # TODO: Change normalization to normalization per element
-    # normalize_traces(*traces, global_normalize = global_normalize)
-
-    # Get sliding window arrays
-    l_windows = []
-    for x in _traces:
-        l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
-
-    w_length = min([x.shape[0] for x in l_windows])
-
-    # Prepare data
-    windows = np.zeros((w_length, n_features, len(l_windows)))
-
-    for _i in range(len(l_windows)):
-        windows[:, :, _i] = l_windows[_i][:w_length]
-
-    # Global max normalization:
-    normalize_windows_global(windows)
-
-    # Per-channel normalization:
-    # normalize_windows_per_trace(windows)
-
-    # Predict
-    _scores = model.predict(windows, verbose = False, batch_size = batch_size)
-
-    # Plot
-    # if args and args.plot_positives:
-    #     plot_threshold_scores(scores, windows, params['threshold'], file_name, params['plot_labels'])
-
-    # Save scores
-    # if args and args.save_positives:
-    #     save_threshold_scores(scores, windows, params['threshold'],
-    #                           params['positives_h5_path'], params['save_h5_labels'])
-
-    return _scores
-
-
-def restore_scores(_scores, shape, shift):
-    """
-    Restores scores to original size using linear interpolation.
-
-    Arguments:
-    scores -- original 'compressed' scores
-    shape  -- shape of the restored scores
-    shift  -- sliding windows shift
-    """
-    new_scores = np.zeros(shape)
-    for i in range(1, _scores.shape[0]):
-
-        for j in range(_scores.shape[1]):
-
-            start_i = (i - 1) * shift
-            end_i = i * shift
-            if end_i >= shape[0]:
-                end_i = shape[0] - 1
-
-            new_scores[start_i : end_i, j] = np.linspace(_scores[i - 1, j], _scores[i, j], shift + 1)[:end_i - start_i]
-
-    return new_scores
-
-
-def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_half_size = 100, min_threshold = 0.8):
-    """
-    Returns positive prediction list in format: [[sample, pseudo-probability], ...]
-    """
-    _positives = []
-
-    x = _scores[:, peak_idx]
-
-    peaks = find_peaks(x, distance = peak_dist, height=[min_threshold, 1.])
-
-    for _i in range(len(peaks[0])):
-
-        start_id = peaks[0][_i] - avg_window_half_size
-        if start_id < 0:
-            start_id = 0
-
-        end_id = start_id + avg_window_half_size*2
-        if end_id > len(x):
-            end_id = len(x) - 1
-            start_id = end_id - avg_window_half_size*2
-
-        # Get mean values
-        peak_mean = x[start_id : end_id].mean()
-
-        means = []
-        for idx in other_idxs:
-            means.append(_scores[:, idx][start_id : end_id].mean())
-
-        is_max = True
-        for m in means:
-
-            if m > peak_mean:
-                is_max = False
-
-        if is_max:
-            _positives.append([peaks[0][_i], peaks[1]['peak_heights'][_i]])
-
-    return _positives
-
-
-def truncate(f, n):
-    """
-    Floors float to n-digits after comma.
-    """
-    import math
-    return math.floor(f * 10 ** n) / 10 ** n
-
-
-def print_results(_detected_peaks, filename):
-    """
-    Prints out peaks in the file.
-    """
-    with open(filename, 'a') as f:
-
-        for record in _detected_peaks:
-
-            line = ''
-            # Print wave type
-            line += f'{record["type"]} '
-
-            # Print pseudo-probability
-            line += f'{truncate(record["pseudo-probability"], 2):1.2f} '
-
-            # Print time
-            dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S")
-            line += f'{dt_str}\n'
-
-            # Write
-            f.write(line)
-
-
-def parse_archive_csv(path):
-    """
-    Parses archives names file. Returns list of filename lists: [[archive1, archive2, archive3], ...]
-    :param path:
-    :return:
-    """
-    with open(path) as f:
-        lines = f.readlines()
-
-    _archives = []
-    for line in lines:
-        _archives.append([x for x in line.split()])
-
-    return _archives
-
-
-def load_transformer(weights_path):
-    """
-    Loads standard ST model.
-    :param weights_path: Path to weights file.
-    :return:
-    """
-    _model = st.seismo_transformer(maxlen = 400,
-                                   patch_size = 25,
-                                   num_channels = 3,
-                                   d_model = 48,
-                                   num_heads = 8,
-                                   ff_dim_factor = 4,
-                                   layers_depth = 8,
-                                   num_classes = 3,
-                                   drop_out_rate = 0.1)
-
-    _model.load_weights(weights_path)
-
-    _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
-                   loss = keras.losses.SparseCategoricalCrossentropy(),
-                   metrics = [keras.metrics.SparseCategoricalAccuracy()])
-
-    return _model
-
-
-def load_favor(weights_path):
-    """
-    Loads fast-attention ST model variant.
-    :param weights_path:
-    :return:
-    """
-    _model = st.seismo_performer_with_spec(maxlen=400,
-                                            nfft=128,
-                                            patch_size_1=35,
-                                            patch_size_2=13,
-                                            num_channels=3,
-                                            num_patches=5,
-                                            d_model=48,
-                                            num_heads=4,
-                                            ff_dim_factor=4,
-                                            layers_depth=2,
-                                            num_classes=3,
-                                            drop_out_rate=0.1)
-
-    _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
-                   loss = keras.losses.SparseCategoricalCrossentropy(),
-                   metrics = [keras.metrics.SparseCategoricalAccuracy()],)
-
-    _model.load_weights(weights_path)
-
-    return _model
-
-def load_cnn(weights_path):
-    """
-    Loads CNN model on top of spectrogram.
-    :param weights_path:
-    :return:
-    """
-    _model = st.model_cnn_spec(400,128)
-
-    _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
-                   loss = keras.losses.SparseCategoricalCrossentropy(),
-                   metrics = [keras.metrics.SparseCategoricalAccuracy()],)
-
-    _model.load_weights(weights_path)
-
-    return _model
-
 
 if __name__ == '__main__':
-
-    # TODO: PARSE ARGUMENTS BEFORE LOADING TENSORFLOW
 
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
@@ -410,6 +22,8 @@ if __name__ == '__main__':
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
     parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
+    parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
+    parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
 
@@ -432,7 +46,9 @@ if __name__ == '__main__':
     args.threshold = float(args.threshold)
     args.batch_size = int(args.batch_size)
 
-    archives = parse_archive_csv(args.input)  # parse archive names
+    import utils.scan_tools as stools
+
+    archives = stools.parse_archive_csv(args.input)  # parse archive names
 
     # Load model
     if args.model:
@@ -460,13 +76,17 @@ if __name__ == '__main__':
                 argv_dict[spl[0]] = spl[1]
 
         model = loader_call(**argv_dict)
-
-    elif args.cnn:
-        model = load_cnn(args.weights)
-    elif not args.favor:
-        model = load_transformer(args.weights)
+    # TODO: Print loaded model info. Also add flag --inspect to print model summary.
     else:
-        model = load_favor(args.weights)
+
+        import utils.seismo_load as seismo_load
+
+        if args.cnn:
+            model = seismo_load.load_cnn(args.weights)
+        elif args.favor:
+            model = seismo_load.load_favor(args.weights)
+        else:
+            model = seismo_load.load_transformer(args.weights)
 
     # Main loop
     for n_archive, l_archives in enumerate(archives):
@@ -478,7 +98,7 @@ if __name__ == '__main__':
 
         # Pre-process data
         for st in streams:
-            pre_process_stream(st)
+            stools.pre_process_stream(st, args.no_filter, args.no_detrend)
 
         # Cut archives to the same length
         max_start_time = None
@@ -563,18 +183,18 @@ if __name__ == '__main__':
                 batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq) for trace in traces]
 
                 # Progress bar
-                progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
-                             prefix = f'Group {n_archive + 1} out of {len(archives)} [',
-                             postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
+                stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                                    prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                                    postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
                 current_batch_global += 1
 
-                scores = scan_traces(*batches, model = model, batch_size = args.batch_size)  # predict
+                scores = stools.scan_traces(*batches, model = model, batch_size = args.batch_size)  # predict
 
                 if scores is None:
                     continue
 
                 # TODO: window step 10 should be in params, including the one used in predict.scan_traces
-                restored_scores = restore_scores(scores, (len(batches[0]), len(model_labels)), 10)
+                restored_scores = stools.restore_scores(scores, (len(batches[0]), len(model_labels)), 10)
 
                 # Get indexes of predicted events
                 predicted_labels = {}
@@ -585,10 +205,10 @@ if __name__ == '__main__':
                         if k != label:
                             other_labels.append(model_labels[k])
 
-                    positives = get_positives(restored_scores,
-                                              positive_labels[label],
-                                              other_labels,
-                                              min_threshold = args.threshold)
+                    positives = stools.get_positives(restored_scores,
+                                                     positive_labels[label],
+                                                     other_labels,
+                                                     min_threshold = args.threshold)
 
                     predicted_labels[label] = positives
 
@@ -616,6 +236,6 @@ if __name__ == '__main__':
 
                         detected_peaks.append(prediction)
 
-                print_results(detected_peaks, args.out)
+                stools.print_results(detected_peaks, args.out)
 
             print('')
