@@ -88,13 +88,13 @@ def load_model(model_path, weights_path):
     return model
 ```
 
-*2. Use --model option with archive_scan.py call*
+*2. Use --model option with `archive_scan.py` call*
 
 Using *--model* option followed by loader module import path will let the script know, 
 that using a custom model loader is required.
-Function `load_model` inside specified module then will be called.
+Function `load_model` then will be called.
 `load_model` arguments can be provided using *--loader_argv* option.
-*--loader_argv* should be a string of `key=value` pairs separated by a whitespace.
+*--loader_argv* should be followed by a string of `key=value` pairs separated by a whitespace.
 
 #### Custom model example
 `python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
