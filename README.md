@@ -49,6 +49,8 @@ S 0.99 01.04.2021 21:38:54
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*
 <br>`--batch_size` VALUE - batch size, default: *500 000* samples
+<br>`--no-filter` - Do not filter input waveforms
+<br>`--no-detrend` - Do not detrend input waveforms
 
 ### Model selection and custom models
 
