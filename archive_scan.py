@@ -42,6 +42,8 @@ if __name__ == '__main__':
     positive_labels = {'P': 0, 'S': 1}
 
     frequency = 100.
+    n_features = 400
+    half_duration = (n_features * 0.5) / frequency
 
     args.threshold = float(args.threshold)
     args.batch_size = int(args.batch_size)
@@ -222,7 +224,8 @@ if __name__ == '__main__':
 
                         # Get prediction UTCDateTime and model pseudo-probability
                         # TODO: why params['frequency'] here but freq = traces[0].stats.frequency before?
-                        tmp_prediction_dates.append([starttime + (prediction[0] / frequency), prediction[1]])
+                        tmp_prediction_dates.append([starttime + (prediction[0] / frequency) + half_duration,
+                                                     prediction[1]])
 
                     predicted_timestamps[label] = tmp_prediction_dates
 
