@@ -25,6 +25,53 @@ def pre_process_stream(stream, no_filter = False, no_detrend = False):
         stream.interpolate(frequency)
 
 
+def trim_streams(streams):
+    """
+    Trims streams to the same overall time span.
+    :return: list of trimmed streams
+    """
+    max_start_time = None
+    min_end_time = None
+
+    for stream in streams:
+
+        current_start = min([x.stats.starttime for x in stream])
+        current_end = max([x.stats.endtime for x in stream])
+
+        if not max_start_time:
+            max_start_time = current_start
+        if not min_end_time:
+            min_end_time = current_end
+
+        if current_start > max_start_time:
+            max_start_time = current_start
+        if current_end < min_end_time:
+            min_end_time = current_end
+
+    cut_streams = []
+    for st in streams:
+        cut_streams.append(st.slice(max_start_time, min_end_time))
+
+    return cut_streams
+
+
+def get_traces(streams, i):
+    """
+    Returns traces with specified index
+    :return: list of traces
+    """
+    traces = [st[i] for st in streams]  # get traces
+
+    # Trim traces to the same length
+    start_time = max([trace.stats.starttime for trace in traces])
+    end_time = min([trace.stats.endtime for trace in traces])
+
+    for j in range(len(traces)):
+        traces[j] = traces[j].slice(start_time, end_time)
+
+    return traces
+
+
 def progress_bar(progress, characters_count = 20,
                  erase_line = True,
                  empty_bar = '.', filled_bar = '=', filled_edge = '>',
@@ -143,7 +190,7 @@ def normalize_windows_per_trace(windows):
             windows[_i, :, _j] = windows[_i, :, _j] / win_max
 
 
-def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size = 100):
+def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 10, original_data = None):
     """
     Get predictions on the group of traces.
 
@@ -158,11 +205,18 @@ def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size
     global_normalize -- normalize globaly all traces if True or locally if False
     batch_size       -- model.fit batch size
     """
+    # Check args
+    import argparse
+    if not args and type(args) != argparse.Namespace:
+        raise AttributeError('args should have an argparse.Namespace type')
+
+    batch_size = args.batch_size
+
     # Check input types
     for x in _traces:
         if type(x) != oc.trace.Trace:
             raise TypeError('traces should be a list or containing obspy.core.trace.Trace objects')
-
+    # plot-positives-original
     # Cut all traces to a same timeframe
     _traces = cut_traces(*_traces)
 
@@ -184,6 +238,7 @@ def scan_traces(*_traces, model = None, n_features = 400, shift = 10, batch_size
         windows[:, :, _i] = l_windows[_i][:w_length]
 
     # Global max normalization:
+    # TODO: Make an parameter for local normalization
     normalize_windows_global(windows)
 
     # Per-channel normalization:

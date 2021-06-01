@@ -24,6 +24,10 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
+    parser.add_argument('--plot-positives', help = 'Plot positives waveforms', action = 'store_true')
+    parser.add_argument('--plot-positives-original', help = 'Plot positives original waveforms, before '
+                                                            'pre-processing',
+                        action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
 
@@ -98,34 +102,21 @@ if __name__ == '__main__':
         for path in l_archives:
             streams.append(read(path))
 
+        # If --plot-positives-original, save original streams
+        original_streams = None
+        if args.plot_positives_original:
+            original_streams = []
+            for path in l_archives:
+                original_streams.append(read(path))
+
         # Pre-process data
         for st in streams:
             stools.pre_process_stream(st, args.no_filter, args.no_detrend)
 
         # Cut archives to the same length
-        max_start_time = None
-        min_end_time = None
-
-        for stream in streams:
-
-            current_start = min([x.stats.starttime for x in stream])
-            current_end = max([x.stats.endtime for x in stream])
-
-            if not max_start_time:
-                max_start_time = current_start
-            if not min_end_time:
-                min_end_time = current_end
-
-            if current_start > max_start_time:
-                max_start_time = current_start
-            if current_end < min_end_time:
-                min_end_time = current_end
-
-        cut_streams = []
-        for st in streams:
-            cut_streams.append(st.slice(max_start_time, min_end_time))
-
-        streams = cut_streams
+        streams = stools.trim_streams(streams)
+        if original_streams:
+            original_streams = stools.trim_streams(original_streams)
 
         # Check if stream traces number is equal
         lengths = [len(st) for st in streams]
@@ -152,14 +143,13 @@ if __name__ == '__main__':
         current_batch_global = 0
         for i in range(n_traces):
 
-            traces = [st[i] for st in streams]  # get traces
-
-            # Trim traces to the same length
-            start_time = max([trace.stats.starttime for trace in traces])
-            end_time = min([trace.stats.endtime for trace in traces])
-
-            for j in range(len(traces)):
-                traces[j] = traces[j].slice(start_time, end_time)
+            traces = stools.get_traces(streams, i)
+            original_traces = None
+            if original_streams:
+                original_traces = stools.get_traces(original_streams, i)
+                if traces[0].data.shape[0] != original_traces[0].data.shape[0]:
+                    raise AttributeError('WARNING: Traces and original_traces have different sizes, '
+                                         'check if preprocessing changes stream length!')
 
             # Determine batch count
             l_trace = traces[0].data.shape[0]
@@ -183,6 +173,10 @@ if __name__ == '__main__':
                 t_start = traces[0].stats.starttime
 
                 batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq) for trace in traces]
+                original_batches = None
+                if original_traces:
+                    original_batches = [trace.slice(t_start + start_pos / freq, t_start + end_pos / freq)
+                                        for trace in original_traces]
 
                 # Progress bar
                 stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
@@ -190,7 +184,10 @@ if __name__ == '__main__':
                                     postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
                 current_batch_global += 1
 
-                scores = stools.scan_traces(*batches, model = model, batch_size = args.batch_size)  # predict
+                scores = stools.scan_traces(*batches,
+                                            model = model,
+                                            args = args,
+                                            original_data = original_batches)  # predict
 
                 if scores is None:
                     continue
