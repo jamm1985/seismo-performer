@@ -1,6 +1,8 @@
 import obspy.core as oc
 from scipy.signal import find_peaks
 import numpy as np
+import matplotlib.pyplot as plt
+import os
 
 
 def pre_process_stream(stream, no_filter = False, no_detrend = False):
@@ -190,6 +192,70 @@ def normalize_windows_per_trace(windows):
             windows[_i, :, _j] = windows[_i, :, _j] / win_max
 
 
+def plot_positives(scores, windows, threshold):
+
+    idx = 0
+    save_name = 'positive_' + str(idx) + '.jpg'
+    while os.path.exists(save_name):
+        idx += 1
+        save_name = 'positive_' + str(idx) + '.jpg'
+
+    for i in range(len(scores)):
+
+        if scores[i][1] > threshold:
+
+            fig, (ax1, ax2, ax3) = plt.subplots(3, sharex = True)
+
+            ax1.set_ylabel('N', rotation = 0.)
+            ax1.plot(windows[i, :, 0], 'r')
+
+            ax2.set_ylabel('E', rotation = 0.)
+            ax2.plot(windows[i, :, 1], 'g')
+
+            ax3.set_ylabel('Z', rotation = 0.)
+            ax3.plot(windows[i, :, 2], 'y')
+
+            plt.savefig(save_name)
+            plt.clf()
+
+            """
+            np_s_array = np.zeros((400, 3))
+
+            np_s_array[:, 0] = windows[i, :, 0]
+            np_s_array[:, 1] = windows[i, :, 1]
+            np_s_array[:, 2] = windows[i, :, 2]
+
+            np.save(params['plot_path'] + code + '_' + str(i) + '_p' + '.npy', np_s_array)
+            """
+
+
+def plot_oririnal_positives(scores, original_windows, threshold, original_scores = None):
+
+    idx = 0
+    save_name = 'original_positive_' + str(idx) + '.jpg'
+    while os.path.exists(save_name):
+        idx += 1
+        save_name = 'original_positive_' + str(idx) + '.jpg'
+
+    for i in range(len(scores)):
+
+        if scores[i][1] > threshold:
+
+            fig, (ax1, ax2, ax3) = plt.subplots(3, sharex = True)
+
+            ax1.set_ylabel('N', rotation = 0.)
+            ax1.plot(original_windows[i, :, 0], 'r')
+
+            ax2.set_ylabel('E', rotation = 0.)
+            ax2.plot(original_windows[i, :, 1], 'g')
+
+            ax3.set_ylabel('Z', rotation = 0.)
+            ax3.plot(original_windows[i, :, 2], 'y')
+
+            plt.savefig(save_name)
+            plt.clf()
+
+
 def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 10, original_data = None):
     """
     Get predictions on the group of traces.
@@ -229,23 +295,37 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     for x in _traces:
         l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
 
+    if args.plot_positives_original:
+        original_l_windows = []
+        for x in original_data:
+            original_l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
+
     w_length = min([x.shape[0] for x in l_windows])
 
     # Prepare data
     windows = np.zeros((w_length, n_features, len(l_windows)))
-
     for _i in range(len(l_windows)):
         windows[:, :, _i] = l_windows[_i][:w_length]
+
+    if args.plot_positives_original:
+        original_windows = np.zeros((w_length, n_features, len(original_l_windows)))
+        for _i in range(len(original_l_windows)):
+            original_windows[:, :, _i] = original_l_windows[_i][:w_length]
 
     # Global max normalization:
     # TODO: Make an parameter for local normalization
     normalize_windows_global(windows)
+    if args.plot_positives_original:
+        normalize_windows_global(original_windows)
 
     # Per-channel normalization:
     # normalize_windows_per_trace(windows)
 
     # Predict
     _scores = model.predict(windows, verbose = False, batch_size = batch_size)
+    # TODO: create another flag for this, e.g. --culculate-original-probs or something
+    if args.plot_positives_original:
+        original_scores = model.predict(original_windows, verbose = False, batch_size = batch_size)
 
     # Plot
     # if args and args.plot_positives:
@@ -255,6 +335,12 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     # if args and args.save_positives:
     #     save_threshold_scores(scores, windows, params['threshold'],
     #                           params['positives_h5_path'], params['save_h5_labels'])
+
+    # Positives plotting
+    if args.plot_positives:
+        plot_positives(_scores, windows, args.threshold)
+    if args.plot_positives_original:
+        plot_oririnal_positives(_scores, original_windows, args.threshold, original_scores)
 
     return _scores
 
