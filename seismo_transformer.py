@@ -163,6 +163,20 @@ class MMScaler(keras.layers.Layer):
 
 
 """
+Rescale to [-1,1]
+"""
+class MaxABSScaler(keras.layers.Layer):
+    def __init__(self):
+        super(MaxABSScaler, self).__init__()
+
+    def call(self, inputs):
+        min_abs_val = tf.abs(tf.reduce_min(inputs))
+        max_abs_val = tf.abs(tf.reduce_max(inputs))
+        max_abs = tf.maximum(min_abs_val, max_abs_val)
+        return inputs / max_abs
+
+
+"""
 Implement a Transformer block as a layer
 Credit:
     Title: Text classification with Transformer
@@ -317,7 +331,8 @@ def seismo_transformer_with_spec(
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
-    x = MMScaler()(x)
+    #x = MMScaler()(x)
+    x = MaxABSScaler()(x)
     # patch the input channel
     x = Rearrange3d(p1=patch_size_1,p2=patch_size_2)(x)
     # embedding
@@ -388,7 +403,8 @@ def seismo_performer_with_spec(
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
-    x = MMScaler()(x)
+    #x = MMScaler()(x)
+    x = MaxABSScaler()(x)
     # patch the input channel
     x = Rearrange3d(p1=patch_size_1,p2=patch_size_2)(x)
     # embedding
