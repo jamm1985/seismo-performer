@@ -8,7 +8,7 @@ Description: train examples on large dataset
 
 import tensorflow as tf
 from tensorflow import keras
-from seismo_transformer import load_test_train_data, seismo_transformer, seismo_transformer_with_spec, seismo_performer_hybrid, seismo_performer_with_spec, model_cnn_spec
+from seismo_transformer import load_test_train_data, seismo_transformer, seismo_transformer_with_spec, seismo_performer_with_spec, model_cnn_spec
 
 # Load CalTech data to NUMPY array.
 # takes 21GB of memory!!!
@@ -48,18 +48,19 @@ model.save_weights('WEIGHTS/model.240K.V2.hd5', save_format='h5')
 
 
 model_with_spec = seismo_transformer_with_spec(
-    maxlen=400,
-    nfft=128,
-    patch_size_1=35,
-    patch_size_2=13,
-    num_channels=3,
-    num_patches=5,
-    d_model=80,
-    num_heads=8,
-    ff_dim_factor=4,
-    layers_depth=1,
-    num_classes=3,
-    drop_out_rate=0.1)
+        maxlen=400,
+        nfft=128,
+        hop_length=4,
+        patch_size_1=69,
+        patch_size_2=13,
+        num_channels=3,
+        num_patches=5,
+        d_model=48,
+        num_heads=4,
+        ff_dim_factor=4,
+        layers_depth=2,
+        num_classes=3,
+        drop_out_rate=0.1)
 
 LR = 0.001
 model_with_spec.compile(
@@ -76,18 +77,19 @@ history = model.fit(
 
 
 model_with_spec = seismo_performer_with_spec(
-    maxlen=400,
-    nfft=128,
-    patch_size_1=5,
-    patch_size_2=5,
-    num_channels=3,
-    num_patches=91,
-    d_model=72,
-    num_heads=8,
-    ff_dim_factor=4,
-    layers_depth=1,
-    num_classes=3,
-    drop_out_rate=0.1)
+        maxlen=400,
+        nfft=128,
+        hop_length=4,
+        patch_size_1=69,
+        patch_size_2=13,
+        num_channels=3,
+        num_patches=5,
+        d_model=48,
+        num_heads=4,
+        ff_dim_factor=4,
+        layers_depth=2,
+        num_classes=3,
+        drop_out_rate=0.1)
 
 LR = 0.001
 model_with_spec.compile(
@@ -117,17 +119,3 @@ history = model_with_spec.fit(
 
 model_with_spec.save('/Users/jamm/Downloads/web/mymodel')
 
-model_hybrid = seismo_performer_hybrid(
-        maxlen=400,
-        patch_size=25,
-        patch_size_1=9,
-        patch_size_2=5,
-        num_channels=3,
-        num_patches_spec = 13,
-        nfft=128,
-        d_model=48,
-        num_heads=8,
-        ff_dim_factor=4,
-        layers_depth=8,
-        num_classes=3,
-        drop_out_rate=0.1)

@@ -26,8 +26,10 @@ import numpy as np
 
 
 def load_hdf5_to_numpy(filename):
-    """Read hdf5 data file,
-    load seismological waveforms and labels and convert to numpy array
+    """
+    Read hdf5 data file,
+    load waveforms and labels to numpy array
+    Parameters
     :filename: HDF5 file name
     :returns: tuple (X, Y) numpy arrays with samples and labels
     """
@@ -41,8 +43,10 @@ def load_hdf5_to_numpy(filename):
 
 
 def load_test_train_data(hdf5_file, proportion, random_state=1):
-    """load data to numpy arrray from HDF5 
+    """
+    Load data to numpy arrray from HDF5 
     and split to train and test sets with shuffle
+    Parameters:
     :hdf5_file: string, path to HDF5 file
     :proportion: size of test set
     :random_state: fix state for testing purposes
@@ -147,6 +151,32 @@ class Rearrange3d(keras.layers.Layer):
 
 
 """
+Rescale to [0,1]
+"""
+class MMScaler(keras.layers.Layer):
+    def __init__(self):
+        super(MMScaler, self).__init__()
+
+    def call(self, inputs):
+        return (inputs - tf.reduce_min(inputs)) / (tf.reduce_max(inputs) - tf.reduce_min(inputs))
+
+
+
+"""
+Rescale to [-1,1]
+"""
+class MaxABSScaler(keras.layers.Layer):
+    def __init__(self):
+        super(MaxABSScaler, self).__init__()
+
+    def call(self, inputs):
+        min_abs_val = tf.abs(tf.reduce_min(inputs))
+        max_abs_val = tf.abs(tf.reduce_max(inputs))
+        max_abs = tf.maximum(min_abs_val, max_abs_val)
+        return inputs / max_abs
+
+
+"""
 Implement a Transformer block as a layer
 Credit:
     Title: Text classification with Transformer
@@ -212,7 +242,9 @@ def seismo_transformer(
         layers_depth=8,
         num_classes=3,
         drop_out_rate=0.1):
-    """Model for P/S/N waves classification using ViT approach
+    """
+    Model for P/S/N waves classification using ViT approach
+    Parameters:
     :maxlen: maximum samples of waveforms
     :patch_size: patch size for every single channel
     :num_channels: number of channels (usually it's equal to 3)
@@ -255,25 +287,29 @@ def seismo_transformer(
 
 def seismo_transformer_with_spec(
         maxlen=400,
-        patch_size_1=35,
+        nfft=128,
+        hop_length=4,
+        patch_size_1=69,
         patch_size_2=13,
         num_channels=3,
-        num_patches = 5,
-        nfft=128,
+        num_patches=5,
         d_model=80,
         num_heads=8,
         ff_dim_factor=4,
         layers_depth=1,
         num_classes=3,
         drop_out_rate=0.1):
-    """The model for P/S/N waves classification using ViT approach
-    with converted raw to spectrogram input
+    """
+    The model for P/S/N waves classification using ViT approach
+    with converted raw signal to spectrogram and the treat it as input to TRANSFORMER
+    Parameters:
     :maxlen: maximum samples of waveforms
-    :patch_size_1: patch size for first dimention
-    :patch_size_2: patch size for second dimention
+    :nfft: number of FFTs in short-time Fourier transform
+    :hop_length: Hop length in sample between analysis windows
+    :patch_size_1: patch size for first dimention (depends on nfft/hop_length)
+    :patch_size_2: patch size for second dimention (depends on nfft/hop_length)
     :num_channels: number of channels (usually it's equal to 3)
     :num_patches: resulting number of patches (FIX manual setup!)
-    :nfft: number of FFTs in short-time Fourier transform
     :d_model: Embedding size for each token
     :num_heads: Number of attention heads
     :ff_dim_factor: Hidden layer size in feed forward network inside transformer
@@ -286,18 +322,18 @@ def seismo_transformer_with_spec(
     num_patches = num_patches
     ff_dim = d_model * ff_dim_factor
     inputs = layers.Input(shape=(maxlen, num_channels))
-    # x = tf.keras.layers.Permute((2, 1))(inputs)
     # do transform
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
-            hop_length=8,
+            hop_length=hop_length,
             input_data_format='channels_last',
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
+    #x = MMScaler()(x)
+    x = MaxABSScaler()(x)
     # patch the input channel
-    # x = tf.keras.layers.Reshape((num_channels, num_patches, patch_size))(x)
     x = Rearrange3d(p1=patch_size_1,p2=patch_size_2)(x)
     # embedding
     x = tf.keras.layers.Dense(d_model)(x)
@@ -323,25 +359,29 @@ def seismo_transformer_with_spec(
 
 def seismo_performer_with_spec(
         maxlen=400,
-        patch_size_1=2,
-        patch_size_2=3,
-        num_channels=3,
-        num_patches = 40,
         nfft=128,
-        d_model=96,
-        num_heads=8,
+        hop_length=4,
+        patch_size_1=69,
+        patch_size_2=13,
+        num_channels=3,
+        num_patches=5,
+        d_model=48,
+        num_heads=4,
         ff_dim_factor=4,
-        layers_depth=8,
+        layers_depth=2,
         num_classes=3,
         drop_out_rate=0.1):
-    """The model for P/S/N waves classification using ViT approach
-    with converted raw to spectrogram input
+    """
+    The model for P/S/N waves classification using ViT approach
+    with converted raw signal to spectrogram and the treat it as input to PERFORMER
+    Parameters:
     :maxlen: maximum samples of waveforms
-    :patch_size_1: patch size for first dimention
-    :patch_size_2: patch size for second dimention
+    :nfft: number of FFTs in short-time Fourier transform
+    :hop_length: Hop length in sample between analysis windows
+    :patch_size_1: patch size for first dimention (depends on nfft/hop_length)
+    :patch_size_2: patch size for second dimention (depends on nfft/hop_length)
     :num_channels: number of channels (usually it's equal to 3)
     :num_patches: resulting number of patches (FIX manual setup!)
-    :nfft: number of FFTs in short-time Fourier transform
     :d_model: Embedding size for each token
     :num_heads: Number of attention heads
     :ff_dim_factor: Hidden layer size in feed forward network inside transformer
@@ -354,18 +394,18 @@ def seismo_performer_with_spec(
     num_patches = num_patches
     ff_dim = d_model * ff_dim_factor
     inputs = layers.Input(shape=(maxlen, num_channels))
-    # x = tf.keras.layers.Permute((2, 1))(inputs)
     # do transform
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
-            hop_length=8,
+            hop_length=hop_length,
             input_data_format='channels_last',
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
+    #x = MMScaler()(x)
+    x = MaxABSScaler()(x)
     # patch the input channel
-    # x = tf.keras.layers.Reshape((num_channels, num_patches, patch_size))(x)
     x = Rearrange3d(p1=patch_size_1,p2=patch_size_2)(x)
     # embedding
     x = tf.keras.layers.Dense(d_model)(x)
@@ -380,78 +420,6 @@ def seismo_performer_with_spec(
     # to MLP head
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
     # MLP-head
-    #x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
-    x = layers.Dropout(drop_out_rate)(x)
-    x = tf.keras.layers.Dense(ff_dim, activation='gelu')(x)
-    x = layers.Dropout(drop_out_rate)(x)
-    outputs = layers.Dense(num_classes, activation='softmax')(x)
-    model = keras.Model(inputs=inputs, outputs=outputs)
-    return model
-
-
-def seismo_performer_hybrid(
-        maxlen=400,
-        patch_size=25,
-        patch_size_1=2,
-        patch_size_2=3,
-        num_channels=3,
-        num_patches_spec = 40,
-        nfft=128,
-        d_model=96,
-        num_heads=8,
-        ff_dim_factor=4,
-        layers_depth=8,
-        num_classes=3,
-        drop_out_rate=0.1):
-    """Create classifier model using ViT approach with transformer blocks
-    :maxlen: maximum samples of waveforms
-    :patch_size: patch size for every single channel
-    :num_channels: number of channels (usually it's equal to 3)
-    :d_model: Embedding size for each token
-    :num_heads: Number of attention heads
-    :ff_dim_factor: Hidden layer size in feed forward network inside transformer
-                    ff_dim = d_model * ff_dim_factor
-    :layers_depth: The number of transformer blocks
-    :num_classes: The number of classes to predict
-    :returns: Keras model object
-    """
-    num_patches = maxlen // patch_size
-    ff_dim = d_model * ff_dim_factor
-    inputs = layers.Input(shape=(maxlen, num_channels))
-    x = tf.keras.layers.Permute((2, 1))(inputs)
-    # patch the input channel
-    x = tf.keras.layers.Reshape((num_channels, num_patches, patch_size))(x)
-    x = RearrangeCh()(x)
-    # embedding
-    x = tf.keras.layers.Dense(d_model)(x)
-    # do transform
-    num_patches_spec = num_patches_spec
-    spec = STFT(n_fft=nfft,
-            window_name=None,
-            pad_end=False,
-            input_data_format='channels_last',
-            output_data_format='channels_last',)(inputs)
-    spec = Magnitude()(spec)
-    spec = MagnitudeToDecibel()(spec)
-    # patch the input channel
-    # x = tf.keras.layers.Reshape((num_channels, num_patches, patch_size))(x)
-    spec = Rearrange3d(p1=patch_size_1,p2=patch_size_2)(spec)
-    # embedding
-    spec = tf.keras.layers.Dense(d_model)(spec)
-    # concatenate spec and patched raw input
-    x = tf.keras.layers.Concatenate(axis=1)([x, spec])
-    # cls token
-    x = ClsToken(d_model)(x)
-    # positional embeddings
-    x = PosEmbeding(num_patches=num_patches+num_patches_spec + 1, embed_dim=d_model)(x)
-    # encoder block
-    x = layers.Dropout(drop_out_rate)(x)
-    for i in range(layers_depth):
-        x = PerformerBlock(d_model, num_heads, ff_dim)(x)
-    # to MLP head
-    x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
-    # MLP-head
-    #x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
     x = layers.Dropout(drop_out_rate)(x)
     x = tf.keras.layers.Dense(ff_dim, activation='gelu')(x)
     x = layers.Dropout(drop_out_rate)(x)
