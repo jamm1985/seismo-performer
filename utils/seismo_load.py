@@ -33,18 +33,20 @@ def load_favor(weights_path):
     :param weights_path:
     :return:
     """
-    _model = st.seismo_performer_with_spec(maxlen=400,
-                                           nfft=128,
-                                           patch_size_1=35,
-                                           patch_size_2=13,
-                                           num_channels=3,
-                                           num_patches=5,
-                                           d_model=48,
-                                           num_heads=4,
-                                           ff_dim_factor=4,
-                                           layers_depth=2,
-                                           num_classes=3,
-                                           drop_out_rate=0.1)
+    _model = st.seismo_performer_with_spec(
+                                        maxlen=400,
+                                        nfft=128,
+                                        hop_length=4,
+                                        patch_size_1=69,
+                                        patch_size_2=5,
+                                        num_channels=3,
+                                        num_patches=13,
+                                        d_model=48,
+                                        num_heads=2,
+                                        ff_dim_factor=4,
+                                        layers_depth=8,
+                                        num_classes=3,
+                                        drop_out_rate=0.1)
 
     _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
                    loss = keras.losses.SparseCategoricalCrossentropy(),
