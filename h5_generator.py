@@ -128,7 +128,7 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
         r_test_size = test_size
         r_train_size = train_size
 
-    if idxs:
+    if idxs is not None:
 
         if not r_train_size:
 
