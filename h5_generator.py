@@ -24,9 +24,11 @@ X_train, X_test = h5_tts(path_to_file, batch_size = 480, test_size = 0.2, random
 history = model.fit(X_train, epochs = 100, validation_data = (X_test))
 """
 
+
 class H5Generator(Sequence):
 
-    def __init__(self, path, batch_size, x_name = 'X', y_name = 'Y', idxs = None):
+    def __init__(self, path, batch_size, x_name = 'X', y_name = 'Y',
+                 idxs = None, length = None, start_pos = 0):
         
         self.h5_file = path
         self.x_name = 'X'
@@ -36,6 +38,9 @@ class H5Generator(Sequence):
 
         self.idxs = idxs
 
+        self.length = length
+        self.start_pos = start_pos
+
     def  __len__(self):
         
         if self.idxs is not None:
@@ -44,8 +49,11 @@ class H5Generator(Sequence):
 
         else:
 
-            with h5.File(self.h5_file) as f:
-                l = f[self.y_name].shape[0]
+            if not self.length:
+                with h5.File(self.h5_file) as f:
+                    self.length = f[self.y_name].shape[0]
+
+            l = self.length
 
         return math.ceil(l / self.batch_size)
 
@@ -64,8 +72,8 @@ class H5Generator(Sequence):
 
             else:
 
-               batch_x = X[idx * self.batch_size : (idx + 1) * self.batch_size]
-               batch_y = Y[idx * self.batch_size : (idx + 1) * self.batch_size]
+               batch_x = X[self.start_pos + idx * self.batch_size : self.start_pos + (idx + 1) * self.batch_size]
+               batch_y = Y[self.start_pos + idx * self.batch_size : self.start_pos + (idx + 1) * self.batch_size]
 
         return batch_x, batch_y
 
@@ -93,15 +101,20 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
         random_state - random state for numpy.random.seed().
         shuffle - shuffle data? Default: True.
     """
-    # Randomize if needed
-    with h5.File(path) as f:
-        idxs = np.arange(f[y_name].shape[0])
-
     if random_state:
         np.random.seed(random_state)
 
+    idxs = None
+    data_length = 0
     if shuffle:
+        with h5.File(path) as f:
+            idxs = np.arange(f[y_name].shape[0])
         np.random.shuffle(idxs)
+        data_length = idxs.shape[0]
+    else:
+        with h5.File(path) as f:
+            data_length = f[y_name].shape[0]
+
 
     # Split
     r_train_size = None
@@ -115,26 +128,51 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
         r_test_size = test_size
         r_train_size = train_size
 
-    if not r_train_size:
-        
-        test_pos = math.ceil(idxs.shape[0] * r_test_size)
+    if idxs is not None:
 
-        test_idxs = idxs[:test_pos]
-        train_idxs = idxs[test_pos:]
-    
+        if not r_train_size:
+
+            test_pos = math.ceil(idxs.shape[0] * r_test_size)
+
+            test_idxs = idxs[:test_pos]
+            train_idxs = idxs[test_pos:]
+
+        else:
+
+            if r_test_size + r_train_size > 1.:
+                raise ValueError('test_size and train_size parameters are invalid!')
+
+            test_pos = math.ceil(idxs.shape[0] * r_test_size)
+            train_pos = math.floor(idxs.shape[0] * r_train_size)
+
+            test_idxs = idxs[:test_pos]
+            train_idxs = idxs[test_pos : test_pos + train_pos]
+
+        # Create datasets
+        X_train = H5Generator(path, batch_size, x_name, y_name, train_idxs)
+        X_test = H5Generator(path, batch_size, x_name, y_name, test_idxs)
+
+        return X_train, X_test
+
     else:
 
-        if r_test_size + r_train_size > 1.:
-            raise ValueError('test_size and train_size parameters are invalid!')
+        if not r_train_size:
 
-        test_pos = math.ceil(idxs.shape[0] * r_test_size)
-        train_pos = math.floor(idxs.shape[0] * r_train_size)
+            test_size = math.ceil(data_length * r_test_size)
+            train_size = data_length - test_size
 
-        test_idxs = idxs[:test_pos]
-        train_idxs = idxs[test_pos : test_pos + train_pos]
+        else:
 
-    # Create datasets
-    X_train = H5Generator(path, batch_size, x_name, y_name, train_idxs)
-    X_test = H5Generator(path, batch_size, x_name, y_name, test_idxs)
+            if r_test_size + r_train_size > 1.:
+                raise ValueError('test_size and train_size parameters are invalid!')
 
-    return X_train, X_test
+            test_size = math.ceil(data_length * r_test_size)
+            train_size = math.floor(data_length * r_train_size)
+
+        # Create datasets
+        X_train = H5Generator(path, batch_size, x_name, y_name,
+                              start_pos = test_size, length = train_size)
+        X_test = H5Generator(path, batch_size, x_name, y_name,
+                             start_pos = 0, length = test_size)
+
+        return X_train, X_test
