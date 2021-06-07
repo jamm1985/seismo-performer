@@ -434,7 +434,7 @@ def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
             line += f'{truncate(record["pseudo-probability"], precision):1.{precision}f} '
 
             # Print time
-            dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S")
+            dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S.") + record["datetime"].strftime("%f").rstrip('0')
             line += f'{dt_str}\n'
 
             # Write
