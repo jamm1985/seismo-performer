@@ -417,7 +417,7 @@ def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
 
-def print_results(_detected_peaks, filename):
+def print_results(_detected_peaks, filename, precision = 2):
     """
     Prints out peaks in the file.
     """
@@ -430,7 +430,7 @@ def print_results(_detected_peaks, filename):
             line += f'{record["type"]} '
 
             # Print pseudo-probability
-            line += f'{truncate(record["pseudo-probability"], 2):1.2f} '
+            line += f'{truncate(record["pseudo-probability"], precision):1.{precision}f} '
 
             # Print time
             dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S")

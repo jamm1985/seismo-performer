@@ -32,6 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--plot-positives-original', help = 'Plot positives original waveforms, before '
                                                             'pre-processing',
                         action = 'store_true')
+    parser.add_argument('--print-precision', help = 'Floating point precision for results pseudo-probability output',
+                        default = 4)
 
     args = parser.parse_args()  # parse arguments
 
@@ -75,6 +77,7 @@ if __name__ == '__main__':
     half_duration = (n_features * 0.5) / frequency
 
     args.batch_size = int(args.batch_size)
+    args.print_precision = int(args.print_precision)
 
     import utils.scan_tools as stools
 
@@ -260,6 +263,6 @@ if __name__ == '__main__':
 
                         detected_peaks.append(prediction)
 
-                stools.print_results(detected_peaks, args.out)
+                stools.print_results(detected_peaks, args.out, precision = args.print_precision)
 
             print('')
