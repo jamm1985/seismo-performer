@@ -21,13 +21,15 @@ if __name__ == '__main__':
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
-    parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
+    parser.add_argument('--batch-size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
     parser.add_argument('--plot-positives', help = 'Plot positives waveforms', action = 'store_true')
     parser.add_argument('--plot-positives-original', help = 'Plot positives original waveforms, before '
                                                             'pre-processing',
                         action = 'store_true')
+    parser.add_argument('--print-precision', help = 'Floating point precision for results pseudo-probability output',
+                        default = 4)
 
     args = parser.parse_args()  # parse arguments
 
@@ -35,22 +37,68 @@ if __name__ == '__main__':
     if not args.model and not args.weights:
 
         parser.print_help()
-        print()
         sys.stderr.write('ERROR: No --weights specified, either specify --weights argument or use'
                          ' custom model loader with --model flag!')
         sys.exit(2)
 
-    # Set default variables
+    # Set label variables
     # TODO: make them customisable through command line arguments
-    model_labels = {'P': 0, 'S': 1, 'N': 2}
-    positive_labels = {'P': 0, 'S': 1}
+    model_labels = {'p': 0, 's': 1, 'n': 2}
+    positive_labels = {'p': 0, 's': 1}
+    # TODO: Change threshold_s and threshold_s so they would be dynamic parameter --threshold
+    #   e.g. '--threshold "p 0.92, s 0.98"'
 
+    # Parse and validate thresholds
+    threshold_labels = {}
+    global_threshold = False
+    if type(args.threshold) is str:
+
+        split_thresholds = args.threshold.split(',')
+
+        if len(split_thresholds) == 1:
+            args.threshold = float(args.threshold)
+            global_threshold = True
+        else:
+            for split in split_thresholds:
+
+                label_threshold = split.split(':')
+                if len(label_threshold) != 2:
+
+                    parser.print_help()
+                    sys.stderr.write('ERROR: Wrong --threshold format. Hint:'
+                                     ' --threshold "p: 0.95, s: 0.9901"')
+                    sys.exit(2)
+
+                threshold_labels[label_threshold[0].strip()] = float(label_threshold[1])
+    else:
+        args.threshold = float(args.threshold)
+        global_threshold = True
+
+    if global_threshold:
+        for label in positive_labels:
+            threshold_labels[label] = args.threshold
+    else:
+        positive_labels_error = False
+        if len(positive_labels) != len(threshold_labels):
+            positive_labels_error = True
+
+        for label in positive_labels:
+            if label not in threshold_labels:
+                positive_labels_error = True
+
+        if positive_labels_error:
+            parser.print_help()
+            sys.stderr.write('ERROR: --threshold values do not match positive_labels.'
+                             f' positive_labels contents: {[k for k in positive_labels.keys()]}')
+            sys.exit(2)
+
+    # Set values
     frequency = 100.
     n_features = 400
     half_duration = (n_features * 0.5) / frequency
 
-    args.threshold = float(args.threshold)
     args.batch_size = int(args.batch_size)
+    args.print_precision = int(args.print_precision)
 
     import utils.scan_tools as stools
 
@@ -207,7 +255,7 @@ if __name__ == '__main__':
                     positives = stools.get_positives(restored_scores,
                                                      positive_labels[label],
                                                      other_labels,
-                                                     min_threshold = args.threshold)
+                                                     threshold = threshold_labels[label])
 
                     predicted_labels[label] = positives
 
@@ -236,6 +284,6 @@ if __name__ == '__main__':
 
                         detected_peaks.append(prediction)
 
-                stools.print_results(detected_peaks, args.out)
+                stools.print_results(detected_peaks, args.out, precision = args.print_precision)
 
             print('')

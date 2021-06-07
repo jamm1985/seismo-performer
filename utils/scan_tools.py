@@ -369,7 +369,7 @@ def restore_scores(_scores, shape, shift):
     return new_scores
 
 
-def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_half_size = 100, min_threshold = 0.8):
+def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_half_size = 100, threshold = 0.8):
     """
     Returns positive prediction list in format: [[sample, pseudo-probability], ...]
     """
@@ -377,7 +377,7 @@ def get_positives(_scores, peak_idx, other_idxs, peak_dist = 10000, avg_window_h
 
     x = _scores[:, peak_idx]
 
-    peaks = find_peaks(x, distance = peak_dist, height=[min_threshold, 1.])
+    peaks = find_peaks(x, distance = peak_dist, height=[threshold, 1.])
 
     for _i in range(len(peaks[0])):
 
@@ -417,7 +417,7 @@ def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
 
-def print_results(_detected_peaks, filename):
+def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
     """
     Prints out peaks in the file.
     """
@@ -427,10 +427,11 @@ def print_results(_detected_peaks, filename):
 
             line = ''
             # Print wave type
-            line += f'{record["type"]} '
+            tp = record['type'].upper() if upper_case else record['type']
+            line += f'{tp} '
 
             # Print pseudo-probability
-            line += f'{truncate(record["pseudo-probability"], 2):1.2f} '
+            line += f'{truncate(record["pseudo-probability"], precision):1.{precision}f} '
 
             # Print time
             dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S")
