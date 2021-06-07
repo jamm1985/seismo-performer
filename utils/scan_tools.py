@@ -417,7 +417,7 @@ def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
 
-def print_results(_detected_peaks, filename, precision = 2):
+def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
     """
     Prints out peaks in the file.
     """
@@ -427,7 +427,8 @@ def print_results(_detected_peaks, filename, precision = 2):
 
             line = ''
             # Print wave type
-            line += f'{record["type"]} '
+            tp = record['type'].upper() if upper_case else record['type']
+            line += f'{tp} '
 
             # Print pseudo-probability
             line += f'{truncate(record["pseudo-probability"], precision):1.{precision}f} '
