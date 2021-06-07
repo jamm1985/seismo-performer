@@ -25,7 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--threshold-s', help = 'Positive prediction threshold'
                                                 ' for S-wave, default: None', default = None)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
-    parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
+    parser.add_argument('--batch-size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
     parser.add_argument('--plot-positives', help = 'Plot positives waveforms', action = 'store_true')
