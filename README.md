@@ -47,7 +47,9 @@ S 0.99 01.04.2021 21:38:54
 <br>`--weights`, `-w` FILENAME - path to model weights file
 <br>`--favor` - use fast attention model variant
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
-<br>`--threshold` VALUE - positive prediction threshold, default: *0.95*
+<br>`--threshold` VALUE - positive prediction threshold, default: *0.95*;
+<br> threshold can be also customized per label, usage example: `--threshold "p:0.95, s:0.99"`;
+threshold string format: *"[label:threshold],..."*
 <br>`--batch_size` VALUE - batch size, default: *500 000* samples
 <br>`--no-filter` - Do not filter input waveforms
 <br>`--no-detrend` - Do not detrend input waveforms
@@ -110,6 +112,9 @@ Scan archives using regular model, with detection threshold 0.95:
 
 Using keras .json model:
 <br>`python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
+
+Label thresholds and custom output precision:
+<br>`python archive_scan.py test/nysh_archives.txt -w WEIGHTS/sakh_2014_2019.h5 --threshold "p: 0.95, s: 0.985" --print-precision 2`
 
 Display help message:
 <br>`python archive_scan.py -h`
