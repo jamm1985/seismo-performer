@@ -20,6 +20,10 @@ if __name__ == '__main__':
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
+    parser.add_argument('--threshold-p', help = 'Positive prediction threshold'
+                                                ' for P-wave, default: None', default = None)
+    parser.add_argument('--threshold-s', help = 'Positive prediction threshold'
+                                                ' for S-wave, default: None', default = None)
     parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
     parser.add_argument('--batch_size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
@@ -35,21 +39,41 @@ if __name__ == '__main__':
     if not args.model and not args.weights:
 
         parser.print_help()
-        print()
         sys.stderr.write('ERROR: No --weights specified, either specify --weights argument or use'
                          ' custom model loader with --model flag!')
         sys.exit(2)
+
+    if args.threshold_p:
+        args.threshold_p = float(args.threshold_p)
+    if args.threshold_s:
+        args.threshold_s = float(args.threshold_s)
+
+    if not all([args.threshold_p, args.threshold_s]) and any([args.threshold_p, args.threshold_s]):
+
+        if not args.threshold_p:
+            sys.stderr.write('ERROR: No --threshold_p specified!')
+        else:
+            sys.stderr.write('ERROR: No --threshold_s specified!')
+
+        sys.exit(2)
+
+    args.threshold = float(args.threshold)
+    if not any([args.threshold_p, args.threshold_s]):
+        args.threshold_p = args.threshold
+        args.threshold_s = args.threshold
 
     # Set default variables
     # TODO: make them customisable through command line arguments
     model_labels = {'P': 0, 'S': 1, 'N': 2}
     positive_labels = {'P': 0, 'S': 1}
+    # TODO: Change threshold_s and threshold_s so they would be dynamic parameter --threshold
+    #   e.g. '--threshold "p 0.92, s 0.98"'
+    threshold_labels = {'P': args.threshold_p, 'S': args.threshold_s}
 
     frequency = 100.
     n_features = 400
     half_duration = (n_features * 0.5) / frequency
 
-    args.threshold = float(args.threshold)
     args.batch_size = int(args.batch_size)
 
     import utils.scan_tools as stools
@@ -207,7 +231,7 @@ if __name__ == '__main__':
                     positives = stools.get_positives(restored_scores,
                                                      positive_labels[label],
                                                      other_labels,
-                                                     min_threshold = args.threshold)
+                                                     threshold = threshold_labels[label],)
 
                     predicted_labels[label] = positives
 
