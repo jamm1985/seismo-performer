@@ -437,11 +437,12 @@ def model_cnn_spec(timewindow, nfft):
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
-            hop_length=8,
+            hop_length=4,
             input_data_format='channels_last',
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
+    x = MaxABSScaler()(x)
     #x = tf.keras.layers.Lambda(lambda image: tf.image.resize(image, (60,60)))(x)
     x = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), padding="same")(x)
     x = tf.keras.layers.BatchNormalization()(x)
