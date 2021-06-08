@@ -457,7 +457,9 @@ def model_cnn_spec(timewindow, nfft):
     x = tf.keras.activations.relu(x)
     x = tf.keras.layers.MaxPooling2D(pool_size=(2,2))(x)
     x = tf.keras.layers.Flatten()(x)
+    x = layers.Dropout(0.5)(x)
     x = tf.keras.layers.Dense(80, activation="relu")(x)
+    x = layers.Dropout(0.5)(x)
     outputs = tf.keras.layers.Dense(3, activation="softmax")(x)
     model = tf.keras.Model(inputs=inputs, outputs=outputs)
     return model
