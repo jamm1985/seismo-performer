@@ -30,6 +30,7 @@ if __name__ == '__main__':
                         action = 'store_true')
     parser.add_argument('--print-precision', help = 'Floating point precision for results pseudo-probability output',
                         default = 4)
+    parser.add_argument('--time', help = 'Print out performance time in stdout', action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
 
@@ -143,6 +144,7 @@ if __name__ == '__main__':
             model = seismo_load.load_transformer(args.weights)
 
     # Main loop
+    total_performance_time = 0.
     for n_archive, l_archives in enumerate(archives):
 
         # Read data
@@ -228,15 +230,25 @@ if __name__ == '__main__':
                                         for trace in original_traces]
 
                 # Progress bar
-                stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
-                                    prefix = f'Group {n_archive + 1} out of {len(archives)} [',
-                                    postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
+
+                if args.time:
+                    stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                                        prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                                        postfix = f'] - Batch: {batches[0].stats.starttime} '
+                                                  f'- {batches[0].stats.endtime} '
+                                                  f'Time: {total_performance_time:.6} seconds')
+                else:
+                    stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                                        prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                                        postfix = f'] - Batch: {batches[0].stats.starttime}'
+                                                  f' - {batches[0].stats.endtime}')
                 current_batch_global += 1
 
-                scores = stools.scan_traces(*batches,
-                                            model = model,
-                                            args = args,
-                                            original_data = original_batches)  # predict
+                scores, performance_time = stools.scan_traces(*batches,
+                                                              model = model,
+                                                              args = args,
+                                                              original_data = original_batches)  # predict
+                total_performance_time += performance_time
 
                 if scores is None:
                     continue
@@ -289,3 +301,6 @@ if __name__ == '__main__':
                 stools.print_results(detected_peaks, args.out, precision = args.print_precision, station = station)
 
             print('')
+
+    if args.time:
+        print(f'Total model prediction time: {total_performance_time:.6} seconds', )

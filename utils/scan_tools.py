@@ -3,6 +3,7 @@ from scipy.signal import find_peaks
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from time import time
 
 
 def pre_process_stream(stream, no_filter = False, no_detrend = False):
@@ -322,7 +323,9 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     # normalize_windows_per_trace(windows)
 
     # Predict
+    start_time = time()
     _scores = model.predict(windows, verbose = False, batch_size = batch_size)
+    performance_time = time() - start_time
     # TODO: create another flag for this, e.g. --culculate-original-probs or something
     if args.plot_positives_original:
         original_scores = model.predict(original_windows, verbose = False, batch_size = batch_size)
@@ -342,7 +345,7 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     if args.plot_positives_original:
         plot_oririnal_positives(_scores, original_windows, args.threshold, original_scores)
 
-    return _scores
+    return _scores, performance_time
 
 
 def restore_scores(_scores, shape, shift):
