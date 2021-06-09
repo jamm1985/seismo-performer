@@ -417,7 +417,7 @@ def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
 
-def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
+def print_results(_detected_peaks, filename, precision = 2, upper_case = True, station = None):
     """
     Prints out peaks in the file.
     """
@@ -426,6 +426,10 @@ def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
         for record in _detected_peaks:
 
             line = ''
+            # Print station if provided
+            if station:
+                line += f'{station} '
+
             # Print wave type
             tp = record['type'].upper() if upper_case else record['type']
             line += f'{tp} '

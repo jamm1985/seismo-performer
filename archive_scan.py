@@ -207,6 +207,7 @@ if __name__ == '__main__':
                 else l_trace // args.batch_size
 
             freq = traces[0].stats.sampling_rate
+            station = traces[0].stats.station
 
             for b in range(batch_count):
 
@@ -265,6 +266,7 @@ if __name__ == '__main__':
 
                     tmp_prediction_dates = []
                     for prediction in predicted_labels[label]:
+
                         starttime = batches[0].stats.starttime
 
                         # Get prediction UTCDateTime and model pseudo-probability
@@ -284,6 +286,6 @@ if __name__ == '__main__':
 
                         detected_peaks.append(prediction)
 
-                stools.print_results(detected_peaks, args.out, precision = args.print_precision)
+                stools.print_results(detected_peaks, args.out, precision = args.print_precision, station = station)
 
             print('')
