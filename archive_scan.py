@@ -42,8 +42,8 @@ if __name__ == '__main__':
     if args.cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         import tensorflow as tf
-        tf.config.threading.set_intra_op_parallelism_threads(args.intra)
-        tf.config.threading.set_inter_op_parallelism_threads(args.inter)
+        tf.config.threading.set_intra_op_parallelism_threads(int(args.intra))
+        tf.config.threading.set_inter_op_parallelism_threads(int(args.inter))
 
     # Validate arguments
     if not args.model and not args.weights:
