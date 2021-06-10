@@ -32,14 +32,15 @@ Advised channel order: `N, E, Z`.
 Output file consists of positives predictions divided by a line break.
 
 Prediction format:
-<br>`<phase_hint> <pseudo-probability> <date> <time>`
-where date is in format: `<day>.<month>.<year>`.
+<br>`<station> <phase_hint> <pseudo-probability> <date> <time>`
 
 Example:
 ```
-P 0.99 01.04.2021 22:11:00
-S 0.99 01.04.2021 21:13:16
-S 0.99 01.04.2021 21:38:54
+NYSH P 0.9994 01.04.2021 00:04:28.46
+NYSH P 0.9994 01.04.2021 00:10:57.06
+NYSH S 0.9998 01.04.2021 00:04:52.96
+NYSH S 0.9991 01.04.2021 00:08:39.56
+NYSH P 0.9997 01.04.2021 00:31:05.36
 ```
 
 ### Options
@@ -50,7 +51,7 @@ S 0.99 01.04.2021 21:38:54
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*;
 <br> threshold can be also customized per label, usage example: `--threshold "p:0.95, s:0.99"`;
 threshold string format: *"[label:threshold],..."*
-<br>`--batch_size` VALUE - batch size, default: *500 000* samples
+<br>`--batch-size` VALUE - batch size, default: *500 000* samples
 <br>`--no-filter` - Do not filter input waveforms
 <br>`--no-detrend` - Do not detrend input waveforms
 
