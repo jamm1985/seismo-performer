@@ -33,9 +33,9 @@ if __name__ == '__main__':
     parser.add_argument('--time', help = 'Print out performance time in stdout', action = 'store_true')
     parser.add_argument('--cpu', help = 'Disable GPU', action = 'store_true')
     parser.add_argument('--intra', help = 'Works only with --cpu specified. '
-                                          'Number of intra operations parallel threads, default 6', default = 6)
+                                          'Number of intra operations parallel threads, default 2', default = 2)
     parser.add_argument('--inter', help = 'Works only with --cpu specified. '
-                                          'Number of inter operations parallel threads, default 6', default = 6)
+                                          'Number of inter operations parallel threads, default 5', default = 5)
 
     args = parser.parse_args()  # parse arguments
 
