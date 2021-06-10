@@ -31,8 +31,19 @@ if __name__ == '__main__':
     parser.add_argument('--print-precision', help = 'Floating point precision for results pseudo-probability output',
                         default = 4)
     parser.add_argument('--time', help = 'Print out performance time in stdout', action = 'store_true')
+    parser.add_argument('--cpu', help = 'Disable GPU', action = 'store_true')
+    parser.add_argument('--intra', help = 'Works only with --cpu specified. '
+                                          'Number of intra operations parallel threads, default 6', default = 6)
+    parser.add_argument('--inter', help = 'Works only with --cpu specified. '
+                                          'Number of inter operations parallel threads, default 6', default = 6)
 
     args = parser.parse_args()  # parse arguments
+
+    if args.cpu:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        import tensorflow as tf
+        tf.config.threading.set_intra_op_parallelism_threads(args.intra)
+        tf.config.threading.set_inter_op_parallelism_threads(args.inter)
 
     # Validate arguments
     if not args.model and not args.weights:
