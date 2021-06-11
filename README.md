@@ -15,7 +15,7 @@ In this repository we release implementation of the model, the model configurati
 `python archive_scan.py [OPTIONS] <input_file>`
 
 Performer model prediction example:
-<br>`python archive_scan.py -w .\WEIGHTS\weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor test/nysh_archives.txt`
+<br>```python archive_scan.py -w .\WEIGHTS\weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor test/nysh_archives.txt```
 
 Predictions are saved in text file which default name is `predictions.txt`
 
@@ -50,16 +50,16 @@ NYSH P 0.9997 01.04.2021 00:31:05.36
 
 ### Usage Examples
 Scan archives using fast-attention model, with detection threshold 0.98:
-<br>`python archive_scan.py -w WEIGHTS/weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor --threshold 0.98 test/nysh_archives.txt`
+<br>```python archive_scan.py -w WEIGHTS/weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor --threshold 0.98 test/nysh_archives.txt```
 
 Scan archives using regular model, with custom output path:
-<br>`python archive_scan.py -w WEIGHTS/model.240K.SAC.V3.h5 -o test/out.o test/nysh_archives.txt`
+<br>```python archive_scan.py -w WEIGHTS/model.240K.SAC.V3.h5 -o test/out.o test/nysh_archives.txt```
 
 Label thresholds and custom output precision:
-<br>`python archive_scan.py -w WEIGHTS/sakh_2014_2019.h5 --threshold "p: 0.95, s: 0.985" --print-precision 2 test/nysh_archives.txt`
+<br>```python archive_scan.py -w WEIGHTS/sakh_2014_2019.h5 --threshold "p: 0.95, s: 0.985" --print-precision 2 test/nysh_archives.txt```
 
 Display help message:
-<br>`python archive_scan.py -h`
+<br>```python archive_scan.py -h```
 
 ### Options
 `-h`, `--help` - display help message
@@ -125,7 +125,7 @@ Function `load_model` then will be called.
 *--loader_argv* should be followed by a string of `key=value` pairs separated by a whitespace.
 
 #### Custom model example
-`python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
+```python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt```
 
 
 # Test datasets
