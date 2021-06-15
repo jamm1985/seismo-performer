@@ -5,7 +5,7 @@ if __name__ == '__main__':
 
     # Options parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', '-c', help = 'Path to Seismo-Transformer model weights file')
+    parser.add_argument('--weights', '-w', help = 'Path to Seismo-Transformer model weights file')
     parser.add_argument('--cnn', help = 'Use CNN version of the Seismo-Transformer',
                         action = 'store_true')
     parser.add_argument('--favor', help = 'Use Fast-Attention version of the Seismo-Transformer',
