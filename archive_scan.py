@@ -20,8 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
-    parser.add_argument('--verbose', '-v', help = 'Provide this flag for verbosity', action = 'store_true')
-    parser.add_argument('--batch-size', '-b', help = 'Batch size, default: 500000 samples', default = 500000)
+    parser.add_argument('--batch-size', '-b', help = 'Batch size, default: 500000 samples', default = 10_000)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
     parser.add_argument('--plot-positives', help = 'Plot positives waveforms', action = 'store_true')
@@ -30,8 +29,13 @@ if __name__ == '__main__':
                         action = 'store_true')
     parser.add_argument('--print-precision', help = 'Floating point precision for results pseudo-probability output',
                         default = 4)
+    parser.add_argument('--time', help = 'Print out performance time in stdout', action = 'store_true')
+    parser.add_argument('--cpu', help = 'Disable GPU usage', action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
+
+    if args.cpu:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     # Validate arguments
     if not args.model and not args.weights:
@@ -143,6 +147,7 @@ if __name__ == '__main__':
             model = seismo_load.load_transformer(args.weights)
 
     # Main loop
+    total_performance_time = 0.
     for n_archive, l_archives in enumerate(archives):
 
         # Read data
@@ -207,6 +212,7 @@ if __name__ == '__main__':
                 else l_trace // args.batch_size
 
             freq = traces[0].stats.sampling_rate
+            station = traces[0].stats.station
 
             for b in range(batch_count):
 
@@ -227,15 +233,25 @@ if __name__ == '__main__':
                                         for trace in original_traces]
 
                 # Progress bar
-                stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
-                                    prefix = f'Group {n_archive + 1} out of {len(archives)} [',
-                                    postfix = f'] - Batch: {batches[0].stats.starttime} - {batches[0].stats.endtime}')
+
+                if args.time:
+                    stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                                        prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                                        postfix = f'] - Batch: {batches[0].stats.starttime} '
+                                                  f'- {batches[0].stats.endtime} '
+                                                  f'Time: {total_performance_time:.6} seconds')
+                else:
+                    stools.progress_bar(current_batch_global / total_batch_count, 40, add_space_around = False,
+                                        prefix = f'Group {n_archive + 1} out of {len(archives)} [',
+                                        postfix = f'] - Batch: {batches[0].stats.starttime}'
+                                                  f' - {batches[0].stats.endtime}')
                 current_batch_global += 1
 
-                scores = stools.scan_traces(*batches,
-                                            model = model,
-                                            args = args,
-                                            original_data = original_batches)  # predict
+                scores, performance_time = stools.scan_traces(*batches,
+                                                              model = model,
+                                                              args = args,
+                                                              original_data = original_batches)  # predict
+                total_performance_time += performance_time
 
                 if scores is None:
                     continue
@@ -265,6 +281,7 @@ if __name__ == '__main__':
 
                     tmp_prediction_dates = []
                     for prediction in predicted_labels[label]:
+
                         starttime = batches[0].stats.starttime
 
                         # Get prediction UTCDateTime and model pseudo-probability
@@ -284,6 +301,9 @@ if __name__ == '__main__':
 
                         detected_peaks.append(prediction)
 
-                stools.print_results(detected_peaks, args.out, precision = args.print_precision)
+                stools.print_results(detected_peaks, args.out, precision = args.print_precision, station = station)
 
             print('')
+
+    if args.time:
+        print(f'Total model prediction time: {total_performance_time:.6} seconds', )

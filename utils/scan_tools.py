@@ -3,6 +3,7 @@ from scipy.signal import find_peaks
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from time import time
 
 
 def pre_process_stream(stream, no_filter = False, no_detrend = False):
@@ -322,7 +323,9 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     # normalize_windows_per_trace(windows)
 
     # Predict
+    start_time = time()
     _scores = model.predict(windows, verbose = False, batch_size = batch_size)
+    performance_time = time() - start_time
     # TODO: create another flag for this, e.g. --culculate-original-probs or something
     if args.plot_positives_original:
         original_scores = model.predict(original_windows, verbose = False, batch_size = batch_size)
@@ -342,7 +345,7 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     if args.plot_positives_original:
         plot_oririnal_positives(_scores, original_windows, args.threshold, original_scores)
 
-    return _scores
+    return _scores, performance_time
 
 
 def restore_scores(_scores, shape, shift):
@@ -417,7 +420,7 @@ def truncate(f, n):
     return math.floor(f * 10 ** n) / 10 ** n
 
 
-def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
+def print_results(_detected_peaks, filename, precision = 2, upper_case = True, station = None):
     """
     Prints out peaks in the file.
     """
@@ -426,6 +429,10 @@ def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
         for record in _detected_peaks:
 
             line = ''
+            # Print station if provided
+            if station:
+                line += f'{station} '
+
             # Print wave type
             tp = record['type'].upper() if upper_case else record['type']
             line += f'{tp} '
@@ -434,7 +441,7 @@ def print_results(_detected_peaks, filename, precision = 2, upper_case = True):
             line += f'{truncate(record["pseudo-probability"], precision):1.{precision}f} '
 
             # Print time
-            dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S.") + record["datetime"].strftime("%f").rstrip('0')
+            dt_str = record["datetime"].strftime("%d.%m.%Y %H:%M:%S.%f").rstrip('0')
             line += f'{dt_str}\n'
 
             # Write

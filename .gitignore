@@ -129,4 +129,5 @@ dmypy.json
 .pyre/
 
 # Project dependet
-.iml
+*.iml
+.idea

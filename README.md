@@ -12,7 +12,12 @@ In this repository we release implementation of the model, the model configurati
 
 # How to predict on archives
 
-`python archive_scan.py [OPTIONS] <input_file> <model_weights_path>`
+`python archive_scan.py [OPTIONS] <input_file>`
+
+Performer model prediction example:
+<br>```python archive_scan.py -w .\WEIGHTS\weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor test/nysh_archives.txt```
+
+Predictions are saved in text file which default name is `predictions.txt`
 
 ### Input file
 `input_file` contains archive filenames (recommended channel order: `N, E, Z`) 
@@ -32,34 +37,53 @@ Advised channel order: `N, E, Z`.
 Output file consists of positives predictions divided by a line break.
 
 Prediction format:
-<br>`<phase_hint> <pseudo-probability> <date> <time>`
-where date is in format: `<day>.<month>.<year>`.
+<br>`<station> <phase_hint> <pseudo-probability> <date> <time>`
 
 Example:
 ```
-P 0.99 01.04.2021 22:11:00
-S 0.99 01.04.2021 21:13:16
-S 0.99 01.04.2021 21:38:54
+NYSH P 0.9994 01.04.2021 00:04:28.46
+NYSH P 0.9994 01.04.2021 00:10:57.06
+NYSH S 0.9998 01.04.2021 00:04:52.96
+NYSH S 0.9991 01.04.2021 00:08:39.56
+NYSH P 0.9997 01.04.2021 00:31:05.36
 ```
 
+### Usage Examples
+Scan archives using fast-attention model, with detection threshold 0.98:
+<br>```python archive_scan.py -w WEIGHTS/weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor --threshold 0.98 test/nysh_archives.txt```
+
+Scan archives using regular model, with custom output path:
+<br>```python archive_scan.py -w WEIGHTS/model.240K.SAC.V3.h5 -o test/out.o test/nysh_archives.txt```
+
+Label thresholds and custom output precision:
+<br>```python archive_scan.py -w WEIGHTS/sakh_2014_2019.h5 --threshold "p: 0.95, s: 0.985" --print-precision 2 test/nysh_archives.txt```
+
+Display help message:
+<br>```python archive_scan.py -h```
+
 ### Options
-`-h` - display help message
+`-h`, `--help` - display help message
 <br>`--weights`, `-w` FILENAME - path to model weights file
 <br>`--favor` - use fast attention model variant
+<br>`--cnn` - use CNN model variant
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*;
 <br> threshold can be also customized per label, usage example: `--threshold "p:0.95, s:0.99"`;
 threshold string format: *"[label:threshold],..."*
-<br>`--batch_size` VALUE - batch size, default: *500 000* samples
+<br>`--batch-size` VALUE - batch size, default: *10 000* samples
 <br>`--no-filter` - Do not filter input waveforms
 <br>`--no-detrend` - Do not detrend input waveforms
+<br>`--print-precision` PRECISION - Floating point precision for predictions pseudo-probability output
+<br>`--time` - Print model prediction performance time (in stdout)
+<br>`--cpu` - Enforce only CPU resources usage
 
 ### Model selection and custom models
 
 #### Seismo-Transformer
 
-To select fast-attention variant of the Seismo-Transformer use --favor flag. 
-Regular Seismo-Transformer will be used otherwise.
+To select fast-attention variant of the Seismo-Transformer use `--favor` flag.
+<br>Use `--cnn` flag for CNN model variant.
+<br>Regular Seismo-Transformer will be used if no flag provided.
 
 #### Custom models
 It is possible to predict with custom models, in order to do so, follow these steps:
@@ -101,23 +125,7 @@ Function `load_model` then will be called.
 *--loader_argv* should be followed by a string of `key=value` pairs separated by a whitespace.
 
 #### Custom model example
-`python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
-
-### Examples
-Scan archives using fast-attention model, with detection threshold 0.98:
-<br>`python archive_scan.py test/nysh_archives.txt -w WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
-
-Scan archives using regular model, with detection threshold 0.95:
-<br>`python archive_scan.py test/nysh_archives.txt -w WEIGHTS/sakh_favor_2014_2019.h5 --favor --threshold 0.98`
-
-Using keras .json model:
-<br>`python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt`
-
-Label thresholds and custom output precision:
-<br>`python archive_scan.py test/nysh_archives.txt -w WEIGHTS/sakh_2014_2019.h5 --threshold "p: 0.95, s: 0.985" --print-precision 2`
-
-Display help message:
-<br>`python archive_scan.py -h`
+```python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt```
 
 
 # Test datasets
