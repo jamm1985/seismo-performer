@@ -1,6 +1,7 @@
 import argparse
 import h5py as h5
 import numpy as np
+import pandas as pd
 
 # Silence tensorflow warnings
 import os
@@ -18,7 +19,7 @@ if __name__ == '__main__':
                         action = 'store_true')
     parser.add_argument('--model', help = 'Custom model loader module import path')
     parser.add_argument('--data', '-d', help = 'Dataset file path')
-    parser.add_argument('--out', '-o', help = 'Output file path')
+    parser.add_argument('--out', '-o', help = 'Output file path', default = 'prc_out.csv')
     parser.add_argument('--loader-argv', help = 'Output file path')
 
     args = parser.parse_args()
@@ -78,3 +79,11 @@ if __name__ == '__main__':
     Y_scores = np.max(scores, axis = 1)
 
     # Save predictions info to .csv
+    data = {
+        'Y_true': Y,
+        'Y_pred': Y_pred,
+        'Y_score': Y_scores
+    }
+
+    df = pd.DataFrame(data)
+    df.to_csv(args.out, index = False)
