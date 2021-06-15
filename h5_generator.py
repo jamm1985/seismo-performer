@@ -118,11 +118,11 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
 
     # Split
     r_train_size = None
-    if not test_size and not train_size:
+    if test_size is None and train_size is None:
         r_test_size = 0.25
-    elif not test_size:
-        r_test_size = 1. - r_train_size
-    elif not train_size:
+    elif test_size is None:
+        r_test_size = 1. - train_size
+    elif train_size is None:
         r_test_size = test_size
     else:
         r_test_size = test_size
@@ -130,7 +130,7 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
 
     if idxs is not None:
 
-        if not r_train_size:
+        if r_train_size is None:
 
             test_pos = math.ceil(idxs.shape[0] * r_test_size)
 
@@ -156,7 +156,7 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
 
     else:
 
-        if not r_train_size:
+        if r_train_size is None:
 
             test_size = math.ceil(data_length * r_test_size)
             train_size = data_length - test_size
