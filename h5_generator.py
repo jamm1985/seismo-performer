@@ -107,12 +107,12 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
     idxs = None
     data_length = 0
     if shuffle:
-        with h5.File(path) as f:
+        with h5.File(path, 'r') as f:
             idxs = np.arange(f[y_name].shape[0])
         np.random.shuffle(idxs)
         data_length = idxs.shape[0]
     else:
-        with h5.File(path) as f:
+        with h5.File(path, 'r') as f:
             data_length = f[y_name].shape[0]
 
 
