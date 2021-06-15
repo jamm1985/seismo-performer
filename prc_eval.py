@@ -1,4 +1,6 @@
 import argparse
+import h5py as h5
+import numpy as np
 
 # Silence tensorflow warnings
 import os
@@ -67,7 +69,12 @@ if __name__ == '__main__':
     # Predict
     scores = model.predict(X_test)
 
-    print('SCORES:')
-    print(scores)
+    # Read labels
+    with h5.File(args.data, 'r') as f:
+        Y = np.array(f['Y'], dtype = 'int')
+
+    # Get predictions
+    Y_pred = np.argmax(scores, axis = 1)
+    Y_scores = np.max(scores, axis = 1)
 
     # Save predictions info to .csv

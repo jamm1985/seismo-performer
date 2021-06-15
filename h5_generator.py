@@ -115,7 +115,6 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
         with h5.File(path, 'r') as f:
             data_length = f[y_name].shape[0]
 
-
     # Split
     r_train_size = None
     if test_size is None and train_size is None:
