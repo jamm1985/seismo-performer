@@ -78,8 +78,8 @@ class H5Generator(Sequence):
         return batch_x, batch_y
 
 
-def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
-                     test_size = None, train_size = None,\
+def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
+                     test_size = None, train_size = None,
                      random_state = None, shuffle = True):
     """
     Returns H5Generator objects for train/test split.
