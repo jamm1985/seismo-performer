@@ -35,8 +35,10 @@ if __name__ == '__main__':
                         default = 4)
     parser.add_argument('--time', help = 'Print out performance time in stdout', action = 'store_true')
     parser.add_argument('--cpu', help = 'Disable GPU usage', action = 'store_true')
-    parser.add_argument('--start', help = 'Earliest time stamp allowed for input waveforms', default = None)
-    parser.add_argument('--end', help = 'Latest time stamp allowed for input waveforms', default = None)
+    parser.add_argument('--start', help = 'Earliest time stamp allowed for input waveforms,'
+                                          ' format examples: "2021-04-01" or "2021-04-01T12:35:40"', default = None)
+    parser.add_argument('--end', help = 'Latest time stamp allowed for input waveforms'
+                                        ' format examples: "2021-04-01" or "2021-04-01T12:35:40"', default = None)
 
     args = parser.parse_args()  # parse arguments
 
