@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 from obspy import read
 import sys
+from obspy.core.utcdatetime import UTCDateTime
 
 # Silence tensorflow warnings
 import os
@@ -27,10 +28,15 @@ if __name__ == '__main__':
     parser.add_argument('--plot-positives-original', help = 'Plot positives original waveforms, before '
                                                             'pre-processing',
                         action = 'store_true')
+    parser.add_argument('--print-scores', help = 'Prints model prediction scores and according wave forms data'
+                                                 ' in .npy files',
+                        action = 'store_true')
     parser.add_argument('--print-precision', help = 'Floating point precision for results pseudo-probability output',
                         default = 4)
     parser.add_argument('--time', help = 'Print out performance time in stdout', action = 'store_true')
     parser.add_argument('--cpu', help = 'Disable GPU usage', action = 'store_true')
+    parser.add_argument('--start', help = 'Earliest time stamp allowed for input waveforms', default = None)
+    parser.add_argument('--end', help = 'Latest time stamp allowed for input waveforms', default = None)
 
     args = parser.parse_args()  # parse arguments
 
@@ -95,6 +101,28 @@ if __name__ == '__main__':
             sys.stderr.write('ERROR: --threshold values do not match positive_labels.'
                              f' positive_labels contents: {[k for k in positive_labels.keys()]}')
             sys.exit(2)
+
+    # Set start and end date
+    def parse_date_param(args, p_name):
+        """
+        Parse parameter from dictionary to UTCDateTime type.
+        """
+        if not getattr(args, p_name):
+            return None
+
+        try:
+            return UTCDateTime(getattr(args, p_name))
+        except TypeError as e:
+            print(f'Failed to parse "{p_name}" parameter (value: {getattr(args, p_name)}).'
+                  f' Use {__file__} -h for date format information.')
+            sys.exit(1)
+        except Exception as e:
+            print(f'Failed to parse "{p_name}" parameter (value: {getattr(args, p_name)}).'
+                  f' Use {__file__} -h for date format information.')
+            raise
+
+    args.end = parse_date_param(args, 'end')
+    args.start = parse_date_param(args, 'start')
 
     # Set values
     frequency = 100.
@@ -167,9 +195,9 @@ if __name__ == '__main__':
             stools.pre_process_stream(st, args.no_filter, args.no_detrend)
 
         # Cut archives to the same length
-        streams = stools.trim_streams(streams)
+        streams = stools.trim_streams(streams, args.start, args.end)
         if original_streams:
-            original_streams = stools.trim_streams(original_streams)
+            original_streams = stools.trim_streams(original_streams, args.start, args.end)
 
         # Check if stream traces number is equal
         lengths = [len(st) for st in streams]
@@ -259,6 +287,9 @@ if __name__ == '__main__':
                 # TODO: window step 10 should be in params, including the one used in predict.scan_traces
                 restored_scores = stools.restore_scores(scores, (len(batches[0]), len(model_labels)), 10)
 
+                if args.print_scores:
+                    stools.print_scores(batches, restored_scores, f't{i}_b{b}')
+
                 # Get indexes of predicted events
                 predicted_labels = {}
                 for label in positive_labels:
@@ -306,4 +337,4 @@ if __name__ == '__main__':
             print('')
 
     if args.time:
-        print(f'Total model prediction time: {total_performance_time:.6} seconds', )
+        print(f'Total model prediction time: {total_performance_time:.6} seconds')
