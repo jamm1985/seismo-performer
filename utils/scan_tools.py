@@ -28,13 +28,13 @@ def pre_process_stream(stream, no_filter = False, no_detrend = False):
         stream.interpolate(frequency)
 
 
-def trim_streams(streams):
+def trim_streams(streams, start = None, end = None):
     """
     Trims streams to the same overall time span.
     :return: list of trimmed streams
     """
-    max_start_time = None
-    min_end_time = None
+    max_start_time = start
+    min_end_time = end
 
     for stream in streams:
 
@@ -52,6 +52,7 @@ def trim_streams(streams):
             min_end_time = current_end
 
     cut_streams = []
+
     for st in streams:
         cut_streams.append(st.slice(max_start_time, min_end_time))
 
@@ -147,7 +148,12 @@ def sliding_window(data, n_features, n_shift):
     win_count = np.floor(data.shape[0]/n_shift - n_features/n_shift + 1).astype(int)
     shape = (win_count, n_features)
 
-    windows = np.zeros(shape)
+    try:
+        windows = np.zeros(shape)
+    except ValueError:
+        print(f'\ndata.shape: {data.shape}')
+        print('shape: ', shape)
+        raise
 
     for _i in range(win_count):
 
@@ -462,3 +468,23 @@ def parse_archive_csv(path):
         _archives.append([x for x in line.split()])
 
     return _archives
+
+
+def print_scores(data, scores, file_token):
+    """
+    Prints scores and waveforms.
+    """
+    shapes = [d.data.shape[0] for d in data] + [scores.shape[0]]
+    shapes = set(shapes)
+
+    if len(shapes) != 1:
+        raise AttributeError('All waveforms and scores must have similar length!')
+
+    length = shapes.pop()
+
+    waveforms = np.zeros((length, len(data)))
+    for i, d in enumerate(data):
+        waveforms[:, i] = d.data
+
+    np.save(f'{file_token}_wave.npy', waveforms)
+    np.save(f'{file_token}_scores.npy', scores)

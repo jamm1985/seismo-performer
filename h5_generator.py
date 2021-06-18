@@ -78,8 +78,8 @@ class H5Generator(Sequence):
         return batch_x, batch_y
 
 
-def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
-                     test_size = None, train_size = None,\
+def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',
+                     test_size = None, train_size = None,
                      random_state = None, shuffle = True):
     """
     Returns H5Generator objects for train/test split.
@@ -107,22 +107,21 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
     idxs = None
     data_length = 0
     if shuffle:
-        with h5.File(path) as f:
+        with h5.File(path, 'r') as f:
             idxs = np.arange(f[y_name].shape[0])
         np.random.shuffle(idxs)
         data_length = idxs.shape[0]
     else:
-        with h5.File(path) as f:
+        with h5.File(path, 'r') as f:
             data_length = f[y_name].shape[0]
-
 
     # Split
     r_train_size = None
-    if not test_size and not train_size:
+    if test_size is None and train_size is None:
         r_test_size = 0.25
-    elif not test_size:
-        r_test_size = 1. - r_train_size
-    elif not train_size:
+    elif test_size is None:
+        r_test_size = 1. - train_size
+    elif train_size is None:
         r_test_size = test_size
     else:
         r_test_size = test_size
@@ -130,7 +129,7 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
 
     if idxs is not None:
 
-        if not r_train_size:
+        if r_train_size is None:
 
             test_pos = math.ceil(idxs.shape[0] * r_test_size)
 
@@ -156,7 +155,7 @@ def train_test_split(path, batch_size, x_name = 'X', y_name = 'Y',\
 
     else:
 
-        if not r_train_size:
+        if r_train_size is None:
 
             test_size = math.ceil(data_length * r_test_size)
             train_size = data_length - test_size
