@@ -285,6 +285,59 @@ def seismo_transformer(
     return model
 
 
+def seismo_performer(
+        maxlen=400,
+        patch_size=25,
+        num_channels=3,
+        d_model=96,
+        num_heads=8,
+        ff_dim_factor=4,
+        layers_depth=8,
+        num_classes=3,
+        drop_out_rate=0.1):
+    """
+    Model for P/S/N waves classification using ViT approach
+    Parameters:
+    :maxlen: maximum samples of waveforms
+    :patch_size: patch size for every single channel
+    :num_channels: number of channels (usually it's equal to 3)
+    :d_model: Embedding size for each token
+    :num_heads: Number of attention heads
+    :ff_dim_factor: Hidden layer size in feed forward network inside transformer
+                    ff_dim = d_model * ff_dim_factor
+    :layers_depth: The number of transformer blocks
+    :num_classes: The number of classes to predict
+    :returns: Keras model object
+    """
+    num_patches = maxlen // patch_size
+    ff_dim = d_model * ff_dim_factor
+    inputs = layers.Input(shape=(maxlen, num_channels))
+    x = tf.keras.layers.Permute((2, 1))(inputs)
+    # patch the input channel
+    x = tf.keras.layers.Reshape((num_channels, num_patches, patch_size))(x)
+    x = RearrangeCh()(x)
+    # embedding
+    x = tf.keras.layers.Dense(d_model)(x)
+    # cls token
+    x = ClsToken(d_model)(x)
+    # positional embeddings
+    x = PosEmbeding(num_patches=num_patches + 1, embed_dim=d_model)(x)
+    # encoder block
+    x = layers.Dropout(drop_out_rate)(x)
+    for i in range(layers_depth):
+        x = PerformerBlock(d_model, num_heads, ff_dim)(x)
+    # to MLP head
+    x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
+    # MLP-head
+    #x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
+    x = layers.Dropout(drop_out_rate)(x)
+    x = tf.keras.layers.Dense(ff_dim, activation='gelu')(x)
+    x = layers.Dropout(drop_out_rate)(x)
+    outputs = layers.Dense(num_classes, activation='softmax')(x)
+    model = keras.Model(inputs=inputs, outputs=outputs)
+    return model
+
+
 def seismo_transformer_with_spec(
         maxlen=400,
         nfft=128,
