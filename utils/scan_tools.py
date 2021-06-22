@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from time import time
+from obspy.core.utcdatetime import UTCDateTime
 
 
 def pre_process_stream(stream, no_filter = False, no_detrend = False):
@@ -471,9 +472,12 @@ def parse_archive_csv(path):
 
 
 def print_scores(data, scores, file_token):
+def print_scores(data, scores, predictions, file_token, window_length = 400):
     """
     Prints scores and waveforms.
     """
+    right_shift = window_length // 2
+
     shapes = [d.data.shape[0] for d in data] + [scores.shape[0]]
     shapes = set(shapes)
 
@@ -486,5 +490,12 @@ def print_scores(data, scores, file_token):
     for i, d in enumerate(data):
         waveforms[:, i] = d.data
 
+    # Shift scores
+    shifted_scores = np.zeros((length, len(data)))
+    shifted_scores[right_shift:] = scores[:-right_shift]
+
+
+    # TODO: Save predictions samples in .csv ?
+
     np.save(f'{file_token}_wave.npy', waveforms)
-    np.save(f'{file_token}_scores.npy', scores)
+    np.save(f'{file_token}_scores.npy', shifted_scores)
