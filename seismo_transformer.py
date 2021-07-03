@@ -478,7 +478,9 @@ def seismo_performer_with_spec(
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
     # MLP-head
     x = layers.Dropout(drop_out_rate)(x)
-    x = tf.keras.layers.Dense(ff_dim, activation='gelu')(x)
+    x = tf.keras.layers.Dense(d_model*2, activation='gelu')(x)
+    x = layers.Dropout(drop_out_rate)(x)
+    x = tf.keras.layers.Dense(d_model, activation='gelu')(x)
     x = layers.Dropout(drop_out_rate)(x)
     outputs = layers.Dense(num_classes, activation='softmax')(x)
     model = keras.Model(inputs=inputs, outputs=outputs)
