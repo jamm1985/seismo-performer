@@ -471,7 +471,7 @@ def seismo_performer_with_spec(
     # positional embeddings
     x = PosEmbeding(num_patches=num_patches + 1, embed_dim=d_model)(x)
     # encoder block
-    x = layers.Dropout(drop_out_rate)(x)
+    # x = layers.Dropout(drop_out_rate)(x)
     for i in range(layers_depth):
         x = PerformerBlock(d_model, num_heads, ff_dim)(x)
     # to MLP head
