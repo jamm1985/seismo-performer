@@ -331,7 +331,9 @@ def seismo_performer(
     # MLP-head
     #x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
     x = layers.Dropout(drop_out_rate)(x)
-    x = tf.keras.layers.Dense(ff_dim, activation='gelu')(x)
+    x = tf.keras.layers.Dense(d_model*2, activation='gelu')(x)
+    x = layers.Dropout(drop_out_rate)(x)
+    x = tf.keras.layers.Dense(d_model, activation='gelu')(x)
     x = layers.Dropout(drop_out_rate)(x)
     outputs = layers.Dense(num_classes, activation='softmax')(x)
     model = keras.Model(inputs=inputs, outputs=outputs)
