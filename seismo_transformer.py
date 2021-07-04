@@ -486,7 +486,7 @@ def seismo_performer_with_spec(
     # cls token
     x = ClsToken(d_model)(x)
     # positional embeddings
-    x = PosEmbeding2(num_patches=num_patches + 1, embed_dim=d_model)(x)
+    x = PosEmbeding2(num_patches=num_patches + 1, projection_dim=d_model)(x)
     # encoder block
     for i in range(layers_depth):
         x = PerformerBlock(d_model, num_heads, ff_dim)(x)
