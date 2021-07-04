@@ -210,24 +210,27 @@ class PerformerBlock(layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(PerformerBlock, self).__init__()
         self.att = fast_attention.Attention(
-            num_heads=num_heads, hidden_size=embed_dim, attention_dropout=0.0)
-        self.ffn = keras.Sequential(
-            [layers.Dense(ff_dim,
-                activation='gelu'),
-                layers.Dense(embed_dim), ]
-        )
+            num_heads=num_heads, hidden_size=embed_dim, attention_dropout=rate)
+        self.ffn1 = layers.Dense(ff_dim, activation='gelu')
+        self.ffn2 = layers.Dense(ff_dim/2, activation='gelu')
+        self.add1 = layers.Add()
+        self.add2 = layers.Add()
         self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
         self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
         self.dropout1 = layers.Dropout(rate)
         self.dropout2 = layers.Dropout(rate)
 
     def call(self, inputs, training):
-        attn_output = self.att(inputs, inputs, bias=None)
-        attn_output = self.dropout1(attn_output, training=training)
-        out1 = self.layernorm1(inputs + attn_output)
-        ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output, training=training)
-        return self.layernorm2(out1 + ffn_output)
+        ln_1 = self.layernorm1(inputs)
+        attn_output = self.att(ln_1, ln_1, bias=None)
+        add_1 = self.add1([attn_output, inputs])
+        ln_2 = self.layernorm1(add_1)
+        mlp_1 = self.ffn1(ln_2)
+        dropout_1 = self.dropout1(mlp_1)
+        mlp_2 = self.ffn2(dropout_1)
+        return self.dropout2(mlp_2)
+
+
 
 """
 Models section
@@ -471,11 +474,11 @@ def seismo_performer_with_spec(
     # positional embeddings
     x = PosEmbeding(num_patches=num_patches + 1, embed_dim=d_model)(x)
     # encoder block
-    # x = layers.Dropout(drop_out_rate)(x)
     for i in range(layers_depth):
         x = PerformerBlock(d_model, num_heads, ff_dim)(x)
     # to MLP head
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
+    x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
     # MLP-head
     x = layers.Dropout(drop_out_rate)(x)
     x = tf.keras.layers.Dense(d_model*2, activation='gelu')(x)
