@@ -224,7 +224,7 @@ class PerformerBlock(layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(PerformerBlock, self).__init__()
         self.att = fast_attention.Attention(
-            num_heads=num_heads, hidden_size=embed_dim, attention_dropout=rate)
+            num_heads=num_heads, hidden_size=embed_dim, attention_dropout=0.1)
         self.ffn1 = layers.Dense(ff_dim, activation='gelu')
         self.ffn2 = layers.Dense(embed_dim, activation='gelu')
         self.add1 = layers.Add()
@@ -489,7 +489,7 @@ def seismo_performer_with_spec(
     x = PosEmbeding2(num_patches=num_patches + 1, projection_dim=d_model)(x)
     # encoder block
     for i in range(layers_depth):
-        x = PerformerBlock(d_model, num_heads, ff_dim)(x)
+        x = PerformerBlock(d_model, num_heads, ff_dim, rate=drop_out_rate)(x)
     # to MLP head
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
     x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
