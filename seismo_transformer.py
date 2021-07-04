@@ -125,6 +125,20 @@ class PosEmbeding(keras.layers.Layer):
         return inputs + self.w
 
 
+class PosEmbeding2(layers.Layer):
+    def __init__(self, num_patches, projection_dim):
+        super(PosEmbeding2, self).__init__()
+        self.num_patches = num_patches
+        self.position_embedding = layers.Embedding(
+            input_dim=num_patches, output_dim=projection_dim
+        )
+
+    def call(self, inputs):
+        positions = tf.range(start=0, limit=self.num_patches, delta=1)
+        encoded = inputs + self.position_embedding(positions)
+        return encoded
+
+
 """
 Rearrange 3 channels with patches to 1 channel
 """
@@ -212,7 +226,7 @@ class PerformerBlock(layers.Layer):
         self.att = fast_attention.Attention(
             num_heads=num_heads, hidden_size=embed_dim, attention_dropout=rate)
         self.ffn1 = layers.Dense(ff_dim, activation='gelu')
-        self.ffn2 = layers.Dense(d_model, activation='gelu')
+        self.ffn2 = layers.Dense(embed_dim, activation='gelu')
         self.add1 = layers.Add()
         self.add2 = layers.Add()
         self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
@@ -472,7 +486,7 @@ def seismo_performer_with_spec(
     # cls token
     x = ClsToken(d_model)(x)
     # positional embeddings
-    x = PosEmbeding(num_patches=num_patches + 1, embed_dim=d_model)(x)
+    x = PosEmbeding2(num_patches=num_patches + 1, embed_dim=d_model)(x)
     # encoder block
     for i in range(layers_depth):
         x = PerformerBlock(d_model, num_heads, ff_dim)(x)
