@@ -338,15 +338,15 @@ def seismo_performer(
     # cls token
     x = ClsToken(d_model)(x)
     # positional embeddings
-    x = PosEmbeding(num_patches=num_patches + 1, embed_dim=d_model)(x)
+    x = PosEmbeding2(num_patches=num_patches + 1, projection_dim=d_model)(x)
     # encoder block
-    x = layers.Dropout(drop_out_rate)(x)
+    #x = layers.Dropout(drop_out_rate)(x)
     for i in range(layers_depth):
         x = PerformerBlock(d_model, num_heads, ff_dim)(x)
     # to MLP head
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
     # MLP-head
-    #x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
+    x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
     x = layers.Dropout(drop_out_rate)(x)
     x = tf.keras.layers.Dense(d_model*2, activation='gelu')(x)
     x = layers.Dropout(drop_out_rate)(x)
