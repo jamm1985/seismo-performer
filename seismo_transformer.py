@@ -468,13 +468,14 @@ def seismo_performer_with_spec(
     num_patches = num_patches
     ff_dim = d_model * ff_dim_factor
     inputs = layers.Input(shape=(maxlen, num_channels))
+    x = tf.keras.layers.GaussianDropout(drop_out_rate)(inputs)
     # do transform
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
             hop_length=hop_length,
             input_data_format='channels_last',
-            output_data_format='channels_last',)(inputs)
+            output_data_format='channels_last',)(x)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
     #x = MMScaler()(x)
