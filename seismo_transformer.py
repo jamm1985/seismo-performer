@@ -212,7 +212,7 @@ class PerformerBlock(layers.Layer):
         self.att = fast_attention.Attention(
             num_heads=num_heads, hidden_size=embed_dim, attention_dropout=rate)
         self.ffn1 = layers.Dense(ff_dim, activation='gelu')
-        self.ffn2 = layers.Dense(ff_dim/2, activation='gelu')
+        self.ffn2 = layers.Dense(d_model, activation='gelu')
         self.add1 = layers.Add()
         self.add2 = layers.Add()
         self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
