@@ -489,7 +489,7 @@ def plot_wave_scores(file_token, wave, scores,
     # Plot wave
     for i in range(channels_num):
 
-        axes[i].plot(wave[:, i])
+        axes[i].plot(wave[:, i], color = '#000000', linewidth = 1.)
         axes[i].locator_params(axis = 'both', nbins = 4)
         axes[i].set_ylabel(channel_names[i])
 
@@ -514,7 +514,7 @@ def plot_wave_scores(file_token, wave, scores,
     # Plot scores
     for i in range(classes_num):
 
-        axes[channels_num + i].plot(scores[:, i], 'g')
+        axes[channels_num + i].plot(scores[:, i], color = '#0022cc', linewidth = 1.)
 
         if i in events:
             for pos in events[i]:
