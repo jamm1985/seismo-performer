@@ -289,9 +289,6 @@ if __name__ == '__main__':
                 # TODO: window step 10 should be in params, including the one used in predict.scan_traces
                 restored_scores = stools.restore_scores(scores, (len(batches[0]), len(model_labels)), 10)
 
-                if args.print_scores:
-                    stools.print_scores(batches, restored_scores, f't{i}_b{b}')
-
                 # Get indexes of predicted events
                 predicted_labels = {}
                 for label in positive_labels:
@@ -333,6 +330,9 @@ if __name__ == '__main__':
                                       'pseudo-probability': pred[1]}
 
                         detected_peaks.append(prediction)
+
+                if args.print_scores:
+                    stools.print_scores(batches, restored_scores, predicted_labels, f't{i}_b{b}')
 
                 stools.print_results(detected_peaks, args.out, precision = args.print_precision, station = station)
 

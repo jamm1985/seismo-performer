@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from time import time
+from obspy.core.utcdatetime import UTCDateTime
 
 
 def pre_process_stream(stream, no_filter = False, no_detrend = False):
@@ -470,10 +471,87 @@ def parse_archive_csv(path):
     return _archives
 
 
-def print_scores(data, scores, file_token):
+def plot_wave_scores(file_token, wave, scores,
+                     start_time, predictions, right_shift = 0,
+                     channel_names = ['N', 'E', 'Z'],
+                     score_names = ['P', 'S', 'N']):
+    """
+    Plots waveform and prediction scores as an image
+    """
+    channels_num = wave.shape[1]
+    classes_num = scores.shape[1]
+    scores_length = scores.shape[0]
+
+    # TODO: Make figure size dynamically chosen, based on the input length
+    fig = plt.figure(figsize = (9.8, 7.), dpi = 160)
+    axes = fig.subplots(channels_num + classes_num, 1, sharex = True)
+
+    # Plot wave
+    for i in range(channels_num):
+
+        axes[i].plot(wave[:, i], color = '#000000', linewidth = 1.)
+        axes[i].locator_params(axis = 'both', nbins = 4)
+        axes[i].set_ylabel(channel_names[i])
+
+    # Process events and ticks
+    freq = 100.  # TODO: implement through Trace.stats
+    labels = {'p': 0, 's': 1}  # TODO: configure labels through options
+    # TODO: make sure that labels are not too close.
+    ticks = [100, scores_length - 100]
+    events = {}
+
+    for label, index in labels.items():
+
+        label_events = []
+        for pos, _ in predictions[label]:
+
+            pos += right_shift
+            label_events.append(pos)
+            ticks.append(pos)
+
+        events[index] = label_events
+
+    # Plot scores
+    for i in range(classes_num):
+
+        axes[channels_num + i].plot(scores[:, i], color = '#0022cc', linewidth = 1.)
+
+        if i in events:
+            for pos in events[i]:
+                axes[channels_num + i].plot([pos], scores[:, i][pos], 'r*', markersize = 7)
+
+        axes[channels_num + i].set_ylabel(score_names[i])
+
+    # Set x-ticks
+    for ax in axes:
+        ax.set_xticks(ticks)
+
+    # Configure ticks labels
+    xlabels = []
+    for pos in axes[-1].get_xticks():
+
+        c_time = start_time + pos/freq
+        micro = c_time.strftime('%f')[:2]
+        xlabels.append(c_time.strftime('%H:%M:%S') + f'.{micro}')
+
+    axes[-1].set_xticklabels(xlabels)
+
+    # Add date text
+    date = start_time.strftime('%Y-%m-%d')
+    fig.text(0.095, 1., date, va = 'center')
+
+    # Finalize and save
+    fig.tight_layout()
+    fig.savefig(file_token + '.jpg')
+    fig.clear()
+
+
+def print_scores(data, scores, predictions, file_token, window_length = 400):
     """
     Prints scores and waveforms.
     """
+    right_shift = window_length // 2
+
     shapes = [d.data.shape[0] for d in data] + [scores.shape[0]]
     shapes = set(shapes)
 
@@ -486,5 +564,14 @@ def print_scores(data, scores, file_token):
     for i, d in enumerate(data):
         waveforms[:, i] = d.data
 
+    # Shift scores
+    shifted_scores = np.zeros((length, len(data)))
+    shifted_scores[right_shift:] = scores[:-right_shift]
+
+    plot_wave_scores(file_token, waveforms, shifted_scores, data[0].stats.starttime, predictions,
+                     right_shift = right_shift)
+
+    # TODO: Save predictions samples in .csv ?
+
     np.save(f'{file_token}_wave.npy', waveforms)
-    np.save(f'{file_token}_scores.npy', scores)
+    np.save(f'{file_token}_scores.npy', shifted_scores)
