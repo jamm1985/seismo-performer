@@ -272,7 +272,7 @@ def seismo_transformer(
     # encoder block
     x = layers.Dropout(drop_out_rate)(x)
     for i in range(layers_depth):
-        x = PerformerBlock(d_model, num_heads, ff_dim)(x)
+        x = TransformerBlock(d_model, num_heads, ff_dim)(x)
     # to MLP head
     x = tf.keras.layers.Lambda(lambda x: x[:, 0])(x)
     # MLP-head
