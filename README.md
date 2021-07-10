@@ -49,14 +49,20 @@ NYSH P 0.9997 01.04.2021 00:31:05.36
 ```
 
 ### Usage Examples
-Scan archives using fast-attention model, with detection threshold 0.98:
-<br>```python archive_scan.py -w WEIGHTS/weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor --threshold 0.98 test/nysh_archives.txt```
 
-Scan archives using regular model, with custom output path:
-<br>```python archive_scan.py -w WEIGHTS/model.240K.SAC.V3.h5 -o test/out.o test/nysh_archives.txt```
+Scan archives using regular high performance fast-attention model, with detection threshold 0.9999 for P and 0.9995 for S:
 
-Label thresholds and custom output precision:
-<br>```python archive_scan.py -w WEIGHTS/sakh_2014_2019.h5 --threshold "p: 0.95, s: 0.985" --print-precision 2 test/nysh_archives.txt```
+```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+
+Label thresholds, high accuracy and custom output precision:
+
+```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec_hight_accuracy.hd5 --hpa --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+
+CNN model variant:
+
+```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/weights_model_cnn_spec.749K..CALI.V1.2.hd5 --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+
+To improve time for scanning acrhives please increase batch size. 
 
 Display help message:
 <br>```python archive_scan.py -h```
@@ -64,7 +70,7 @@ Display help message:
 ### Options
 `-h`, `--help` - display help message
 <br>`--weights`, `-w` FILENAME - path to model weights file
-<br>`--favor` - use fast attention model variant
+<br>`--hpm` - use fast attention model with high accuracy
 <br>`--cnn` - use CNN model variant
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*;
@@ -79,11 +85,11 @@ threshold string format: *"[label:threshold],..."*
 
 ### Model selection and custom models
 
-#### Seismo-Transformer
+#### Seismo-Performer
 
-To select fast-attention variant of the Seismo-Transformer use `--favor` flag.
+To select fast-attention with high accuracy use `--hpm` flag.
 <br>Use `--cnn` flag for CNN model variant.
-<br>Regular Seismo-Transformer will be used if no flag provided.
+<br>High perfomance Seismo-Performer will be used if no flag provided.
 
 #### Custom models
 It is possible to predict with custom models, in order to do so, follow these steps:
