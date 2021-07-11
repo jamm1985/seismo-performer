@@ -15,7 +15,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help = 'Path to .csv file with archive names')
     parser.add_argument('--weights', '-w', help = 'Path to model weights', default = None)
-    parser.add_argument('--favor', help = 'Use Fast-Attention Seismo-Transformer variant', action = 'store_true')
+    parser.add_argument('--hpa', help = 'Use Fast-Attention with high accuracy', action = 'store_true')
     parser.add_argument('--cnn', help = 'Use simple CNN model on top of spectrogram', action = 'store_true')
     parser.add_argument('--model', help = 'Custom model loader import, default: None', default = None)
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
@@ -171,10 +171,10 @@ if __name__ == '__main__':
 
         if args.cnn:
             model = seismo_load.load_cnn(args.weights)
-        elif args.favor:
-            model = seismo_load.load_favor(args.weights)
+        elif args.hpa:
+            model = seismo_load.load_performer_hpa(args.weights)
         else:
-            model = seismo_load.load_transformer(args.weights)
+            model = seismo_load.load_performer(args.weights)
 
     # Main loop
     total_performance_time = 0.
