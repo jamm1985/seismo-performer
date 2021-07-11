@@ -50,17 +50,25 @@ NYSH P 0.9997 01.04.2021 00:31:05.36
 
 ### Usage Examples
 
-Scan archives using regular high performance fast-attention model, with detection threshold 0.9999 for P and 0.9995 for S:
+Scan archives using regular high performance fast-attention model, with detection threshold `0.9997` for P and S waves:
 
-```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+```
+python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
+```
+
+To speed up processing please increase batch size (100000+). You can also turn off the preprocessing filter (2 Hz) and detrending, as it was for the original training data. Note that in the case of Seismo-Performer, less preprocessing does not actually affect prediction performance, so the same prediction thresholds can be used:
+
+```
+python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 100000 --no-filter --no-detrend --time --print-precision 10
+```
 
 Label thresholds, high accuracy and custom output precision:
 
-```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec_hight_accuracy.hd5 --hpa --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec_hight_accuracy.hd5 --hpa --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10```
 
 CNN model variant:
 
-```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/weights_model_cnn_spec.749K..CALI.V1.2.hd5 --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/weights_model_cnn_spec.hd5 --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
 
 To improve time for scanning acrhives please increase batch size. 
 
