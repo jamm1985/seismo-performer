@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', '-w', help = 'Path to model weights', default = None)
     parser.add_argument('--hpa', help = 'Use Fast-Attention with high accuracy', action = 'store_true')
     parser.add_argument('--cnn', help = 'Use simple CNN model on top of spectrogram', action = 'store_true')
+    parser.add_argument('--gpd', help = 'Use GPD model', action = 'store_true')
     parser.add_argument('--model', help = 'Custom model loader import, default: None', default = None)
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
@@ -167,13 +168,17 @@ if __name__ == '__main__':
     # TODO: Print loaded model info. Also add flag --inspect to print model summary.
     else:
 
-        import utils.seismo_load as seismo_load
-
         if args.cnn:
+            import utils.seismo_load as seismo_load
             model = seismo_load.load_cnn(args.weights)
         elif args.hpa:
+            import utils.seismo_load as seismo_load
             model = seismo_load.load_performer_hpa(args.weights)
+        elif args.gpd:
+            from utils.gpd_loader import load_model as load_gpd
+            model = load_gpd(args.weights)
         else:
+            import utils.seismo_load as seismo_load
             model = seismo_load.load_performer(args.weights)
 
     # Main loop
