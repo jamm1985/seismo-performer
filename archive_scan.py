@@ -11,6 +11,12 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 if __name__ == '__main__':
 
+    # Default weights for models
+    default_weights = {'favor': 'WEIGHTS/w_model_performer_with_spec.hd5',
+                       'hpa': 'WEIGHTS/w_model_performer_with_spec_hight_accuracy.hd5',
+                       'cnn': 'WEIGHTS/weights_model_cnn_spec.hd5',
+                       'gpd': 'WEIGHTS/w_gpd_scsn_2000_2017.h5'}
+
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help = 'Path to .csv file with archive names')
@@ -45,14 +51,6 @@ if __name__ == '__main__':
 
     if args.cpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-    # Validate arguments
-    if not args.model and not args.weights:
-
-        parser.print_help()
-        sys.stderr.write('ERROR: No --weights specified, either specify --weights argument or use'
-                         ' custom model loader with --model flag!')
-        sys.exit(2)
 
     # Set label variables
     # TODO: make them customisable through command line arguments
@@ -170,15 +168,19 @@ if __name__ == '__main__':
 
         if args.cnn:
             import utils.seismo_load as seismo_load
+            if not args.weights: args.weights = default_weights['cnn']
             model = seismo_load.load_cnn(args.weights)
         elif args.hpa:
             import utils.seismo_load as seismo_load
+            if not args.weights: args.weights = default_weights['hpa']
             model = seismo_load.load_performer_hpa(args.weights)
         elif args.gpd:
             from utils.gpd_loader import load_model as load_gpd
+            if not args.weights: args.weights = default_weights['gpd']
             model = load_gpd(args.weights)
         else:
             import utils.seismo_load as seismo_load
+            if not args.weights: args.weights = default_weights['favor']
             model = seismo_load.load_performer(args.weights)
 
     # Main loop
