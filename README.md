@@ -56,10 +56,10 @@ Scan archives using regular high performance fast-attention model, with detectio
 python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
 ```
 
-To speed up processing please increase batch size (100000+). You can also turn off the preprocessing filter (2 Hz) and detrending, as it was for the original training data. Note that in the case of Seismo-Performer, less preprocessing does not actually affect prediction performance, so the same prediction thresholds can be used:
+To speed up processing on GPU please increase batch size (100000+). You can also turn off the preprocessing filter (2 Hz), as it was for the original training data. Note that in the case of Seismo-Performer, less preprocessing does not actually affect prediction performance, so the same prediction thresholds can be used:
 
 ```
-python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 100000 --no-filter --no-detrend --time --print-precision 10
+python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 100000 --no-detrend --time --print-precision 10
 ```
 
 Label thresholds, high accuracy and custom output precision:

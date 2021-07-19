@@ -319,7 +319,7 @@ def seismo_performer_with_spec(
     return model
 
 
-def model_cnn_spec(timewindow, nfft):
+def model_cnn_spec(timewindow, nfft, hop_length=4):
     """build very base CNN model on top of spectrogram.
     :returns: keras model object 
     """
@@ -328,7 +328,7 @@ def model_cnn_spec(timewindow, nfft):
     x = STFT(n_fft=nfft,
             window_name=None,
             pad_end=False,
-            hop_length=4,
+            hop_length=hop_length,
             input_data_format='channels_last',
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
