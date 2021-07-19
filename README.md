@@ -70,7 +70,12 @@ CNN model variant:
 
 ```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/weights_model_cnn_spec.hd5 --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
 
-To improve time for scanning acrhives please increase batch size. 
+To improve time for scanning acrhives please increase batch size.
+
+[GPD](https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/108/5A/2894/546740/Generalized-Seismic-Phase-Detection-with-Deep?redirectedFrom=fulltext) model:
+```
+python archive_scan.py --gpd -w WEIGHTS/w_gpd_scsn_2000_2017.h5 test/nysh_archives.txt
+```
 
 Display help message:
 <br>```python archive_scan.py -h```
