@@ -187,6 +187,14 @@ if __name__ == '__main__':
     total_performance_time = 0.
     for n_archive, l_archives in enumerate(archives):
 
+        # Write archives info
+        with open(args.out, 'a') as f:
+            line = ''
+            for path in l_archives:
+                line += f'{path} '
+            line += '\n'
+            f.write(line)
+
         # Read data
         streams = []
         for path in l_archives:
@@ -344,6 +352,11 @@ if __name__ == '__main__':
                 stools.print_results(detected_peaks, args.out, precision = args.print_precision, station = station)
 
             print('')
+
+        # Write separator
+        with open(args.out, 'a') as f:
+            line = '---' * 12 + '\n'
+            f.write(line)
 
     if args.time:
         print(f'Total model prediction time: {total_performance_time:.6} seconds')
