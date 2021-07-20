@@ -10,18 +10,18 @@ def load_performer(weights_path):
     """
     _model = st.seismo_performer_with_spec(
                                         maxlen=400,
-                                        nfft=128,
+                                        nfft=64,
                                         hop_length=16,
-                                        patch_size_1=18,
-                                        patch_size_2=13,
+                                        patch_size_1=22,
+                                        patch_size_2=11,
                                         num_channels=3,
-                                        num_patches=5,
-                                        d_model=96,
+                                        num_patches=3,
+                                        d_model=48,
                                         num_heads=2,
                                         ff_dim_factor=2,
                                         layers_depth=2,
                                         num_classes=3,
-                                        drop_out_rate=0.3)
+                                        drop_out_rate=0.1)
 
     _model.load_weights(weights_path)
 
@@ -68,7 +68,7 @@ def load_cnn(weights_path):
     :param weights_path:
     :return:
     """
-    _model = st.model_cnn_spec(400,128)
+    _model = st.model_cnn_spec(400,64,16)
 
     _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
                    loss = keras.losses.SparseCategoricalCrossentropy(),
