@@ -15,7 +15,10 @@ In this repository we release implementation of the model, the model configurati
 `python archive_scan.py [OPTIONS] <input_file>`
 
 Performer model prediction example:
-<br>```python archive_scan.py -w .\WEIGHTS\weights_model_performer_with_spec.287K..CALI.V4.3.hd5 --favor test/nysh_archives.txt```
+<br>
+```
+python archive_scan.py test/nysh_archives.txt
+```
 
 Predictions are saved in text file which default name is `predictions.txt`
 
@@ -37,7 +40,10 @@ Advised channel order: `N, E, Z`.
 Output file consists of positives predictions divided by a line break.
 
 Prediction format:
-<br>`<station> <phase_hint> <pseudo-probability> <date> <time>`
+<br>
+```
+<station> <phase_hint> <pseudo-probability> <date> <time>
+```
 
 Example:
 ```
@@ -53,27 +59,39 @@ NYSH P 0.9997 01.04.2021 00:31:05.36
 Scan archives using regular high performance fast-attention model, with detection threshold `0.9997` for P and S waves:
 
 ```
-python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
+python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
 ```
 
 To speed up processing on GPU please increase batch size (100000+). You can also turn off the preprocessing filter (2 Hz), as it was for the original training data. Note that in the case of Seismo-Performer, less preprocessing does not actually affect prediction performance, so the same prediction thresholds can be used:
 
 ```
-python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec.hd5 --threshold "p: 0.9997, s: 0.9995" --batch-size 100000 --no-detrend --time --print-precision 10
+python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --batch-size 100000 --no-detrend --time --print-precision 10
 ```
 
 Label thresholds, high accuracy and custom output precision:
 
-```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/w_model_performer_with_spec_hight_accuracy.hd5 --hpa --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+```
+python archive_scan.py test/nysh_archives.txt --hpa --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
+```
 
 CNN model variant:
 
-```python archive_scan.py test/nysh_archives.txt --weights WEIGHTS/weights_model_cnn_spec.hd5 --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10```
+```
+python archive_scan.py test/nysh_archives.txt --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10
+```
 
-To improve time for scanning acrhives please increase batch size. 
+To improve time for scanning acrhives please increase batch size.
+
+[GPD](https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/108/5A/2894/546740/Generalized-Seismic-Phase-Detection-with-Deep?redirectedFrom=fulltext) model:
+```
+python archive_scan.py --gpd test/nysh_archives.txt
+```
 
 Display help message:
-<br>```python archive_scan.py -h```
+<br>
+```
+python archive_scan.py -h
+```
 
 ### Options
 `-h`, `--help` - display help message
@@ -139,7 +157,9 @@ Function `load_model` then will be called.
 *--loader_argv* should be followed by a string of `key=value` pairs separated by a whitespace.
 
 #### Custom model example
-```python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt```
+```
+python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt
+```
 
 
 # Test datasets
