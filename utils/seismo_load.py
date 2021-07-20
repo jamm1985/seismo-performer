@@ -11,8 +11,8 @@ def load_performer(weights_path):
     _model = st.seismo_performer_with_spec(
                                         maxlen=400,
                                         nfft=64,
-                                        hop_length=8,
-                                        patch_size_1=43,
+                                        hop_length=16,
+                                        patch_size_1=22,
                                         patch_size_2=11,
                                         num_channels=3,
                                         num_patches=3,
