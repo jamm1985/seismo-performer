@@ -191,35 +191,8 @@ class MaxABSScaler(keras.layers.Layer):
 
 
 """
-Implement a Transformer block as a layer
-Credit:
-    Title: Text classification with Transformer
-    Author: [Apoorv Nandan](https://twitter.com/NandanApoorv)
+Implement a Performer block as a layer
 """
-class TransformerBlock(layers.Layer):
-    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
-        super(TransformerBlock, self).__init__()
-        self.att = layers.MultiHeadAttention(
-            num_heads=num_heads, key_dim=embed_dim)
-        self.ffn = keras.Sequential(
-            [layers.Dense(ff_dim,
-                activation='gelu'),
-                layers.Dense(embed_dim), ]
-        )
-        self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
-        self.dropout1 = layers.Dropout(rate)
-        self.dropout2 = layers.Dropout(rate)
-
-    def call(self, inputs, training):
-        attn_output = self.att(inputs, inputs)
-        attn_output = self.dropout1(attn_output, training=training)
-        out1 = self.layernorm1(inputs + attn_output)
-        ffn_output = self.ffn(out1)
-        ffn_output = self.dropout2(ffn_output, training=training)
-        return self.layernorm2(out1 + ffn_output)
-
-
 class PerformerBlock(layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(PerformerBlock, self).__init__()
@@ -249,15 +222,15 @@ class PerformerBlock(layers.Layer):
 
 def seismo_performer_with_spec(
         maxlen=400,
-        nfft=128,
-        hop_length=4,
-        patch_size_1=69,
-        patch_size_2=13,
+        nfft=64,
+        hop_length=16,
+        patch_size_1=22,
+        patch_size_2=3,
         num_channels=3,
-        num_patches=5,
+        num_patches=11,
         d_model=48,
-        num_heads=4,
-        ff_dim_factor=4,
+        num_heads=2,
+        ff_dim_factor=2,
         layers_depth=2,
         num_classes=3,
         drop_out_rate=0.1):
@@ -280,7 +253,6 @@ def seismo_performer_with_spec(
     :num_classes: The number of classes to predict
     :returns: Keras model object
     """
-    #num_patches = (maxlen // patch_size)**2
     num_patches = num_patches
     ff_dim = d_model * ff_dim_factor
     inputs = layers.Input(shape=(maxlen, num_channels))
@@ -293,13 +265,13 @@ def seismo_performer_with_spec(
             output_data_format='channels_last',)(inputs)
     x = Magnitude()(x)
     x = MagnitudeToDecibel()(x)
-    #x = MMScaler()(x)
+    # custom normalization
     x = MaxABSScaler()(x)
     # patch the input channel
     x = Rearrange3d(p1=patch_size_1,p2=patch_size_2)(x)
     # embedding
     x = tf.keras.layers.Dense(d_model)(x)
-    # cls token
+    # add cls token
     x = ClsToken(d_model)(x)
     # positional embeddings
     x = PosEmbeding2(num_patches=num_patches + 1, projection_dim=d_model)(x)
@@ -311,7 +283,7 @@ def seismo_performer_with_spec(
     x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
     # MLP-head
     x = layers.Dropout(drop_out_rate)(x)
-    x = tf.keras.layers.Dense(d_model*2, activation='gelu')(x)
+    x = tf.keras.layers.Dense(d_model*ff_dim_factor, activation='gelu')(x)
     x = layers.Dropout(drop_out_rate)(x)
     x = tf.keras.layers.Dense(d_model, activation='gelu')(x)
     x = layers.Dropout(drop_out_rate)(x)
