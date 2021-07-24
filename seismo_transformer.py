@@ -242,7 +242,8 @@ class PerformerBlock(layers.Layer):
         mlp_1 = self.ffn1(ln_2)
         dropout_1 = self.dropout1(mlp_1)
         mlp_2 = self.ffn2(dropout_1)
-        return self.dropout2(mlp_2)
+        dropout2 = self.dropout2(mlp_2)
+        return self.add2([mlp_2, add_1])
 
 
 
