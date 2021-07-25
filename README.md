@@ -56,7 +56,7 @@ NYSH P 0.9997 01.04.2021 00:31:05.36
 
 ### Usage Examples
 
-Scan archives using regular high performance fast-attention model, with detection threshold `0.9999` for P and `0.9995` S waves:
+Scan archives using regular high performance fast-attention model, with detection threshold `0.9997` for P and `0.9995` S waves:
 
 ```
 python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
