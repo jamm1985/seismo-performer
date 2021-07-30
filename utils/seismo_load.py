@@ -23,7 +23,8 @@ def load_performer(weights_path = None):
                                         num_classes=3,
                                         drop_out_rate=0.1)
 
-    _model.load_weights(weights_path)
+    if weights_path is not None:
+        _model.load_weights(weights_path)
 
     _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.001),
                    loss = keras.losses.SparseCategoricalCrossentropy(),
@@ -44,6 +45,7 @@ def load_cnn(weights_path = None):
                    loss = keras.losses.SparseCategoricalCrossentropy(),
                    metrics = [keras.metrics.SparseCategoricalAccuracy()],)
 
-    _model.load_weights(weights_path)
+    if weights_path is not None:
+        _model.load_weights(weights_path)
 
     return _model
