@@ -32,7 +32,7 @@ if __name__ == '__main__':
                         default = 64)
     parser.add_argument('--trace-size', '-b', help = 'Length of loaded and processed seismic data stream, '
                                                      'default: 50 000 samples', default = 50_000)
-    parser.add_argument('--shift', help = 'Sliding windows shift, default: 10 samples (10 ms)', default = 40)
+    parser.add_argument('--shift', help = 'Sliding windows shift, default: 40 samples (40 ms)', default = 40)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
     parser.add_argument('--plot-positives', help = 'Plot positives waveforms', action = 'store_true')
