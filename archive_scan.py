@@ -28,7 +28,10 @@ if __name__ == '__main__':
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
     parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
-    parser.add_argument('--batch-size', '-b', help = 'Batch size, default: 500000 samples', default = 10_000)
+    parser.add_argument('--batch-size', help = 'Model batch size, default: 64 slices (4 seconds, 3 channels)',
+                        default = 64)
+    parser.add_argument('--trace-size', '-b', help = 'Length of loaded and processed seismic data stream, '
+                                                     'default: 50 000 samples', default = 50_000)
     parser.add_argument('--shift', help = 'Sliding windows shift, default: 10 samples (10 ms)', default = 40)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
@@ -132,6 +135,7 @@ if __name__ == '__main__':
     half_duration = (n_features * 0.5) / frequency
 
     args.batch_size = int(args.batch_size)
+    args.trace_size = int(args.trace_size)
     args.shift = int(args.shift)
     args.print_precision = int(args.print_precision)
 
@@ -224,10 +228,10 @@ if __name__ == '__main__':
             traces = [st[i] for st in streams]
 
             l_trace = traces[0].data.shape[0]
-            last_batch = l_trace % args.batch_size
-            batch_count = l_trace // args.batch_size + 1 \
+            last_batch = l_trace % args.trace_size
+            batch_count = l_trace // args.trace_size + 1 \
                 if last_batch \
-                else l_trace // args.batch_size
+                else l_trace // args.trace_size
 
             total_batch_count += batch_count
 
@@ -245,10 +249,10 @@ if __name__ == '__main__':
 
             # Determine batch count
             l_trace = traces[0].data.shape[0]
-            last_batch = l_trace % args.batch_size
-            batch_count = l_trace // args.batch_size + 1 \
+            last_batch = l_trace % args.trace_size
+            batch_count = l_trace // args.trace_size + 1 \
                 if last_batch \
-                else l_trace // args.batch_size
+                else l_trace // args.trace_size
 
             freq = traces[0].stats.sampling_rate
             station = traces[0].stats.station
@@ -257,11 +261,11 @@ if __name__ == '__main__':
 
                 detected_peaks = []
 
-                b_size = args.batch_size
+                b_size = args.trace_size
                 if b == batch_count - 1 and last_batch:
                     b_size = last_batch
 
-                start_pos = b * args.batch_size
+                start_pos = b * args.trace_size
                 end_pos = start_pos + b_size
                 t_start = traces[0].stats.starttime
 
