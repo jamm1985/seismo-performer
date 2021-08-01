@@ -301,12 +301,12 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     # Get sliding window arrays
     l_windows = []
     for x in _traces:
-        l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
+        l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
 
     if args.plot_positives_original:
         original_l_windows = []
         for x in original_data:
-            original_l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
+            original_l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
 
     w_length = min([x.shape[0] for x in l_windows])
 
