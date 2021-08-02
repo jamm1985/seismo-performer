@@ -97,7 +97,7 @@ python archive_scan.py -h
 <br> threshold can be also customized per label, usage example: `--threshold "p:0.95, s:0.99"`;
 threshold string format: *"[label:threshold],..."*
 <br>`--batch-size` VALUE - batch size, default: *10 000* samples
-<br>`--shift` VALUE - sliding window shift in samples, default: *40* samples. Increase in
+<br>`--shift` VALUE - sliding window shift in samples, default: *40* milliseconds. Increase in
 value will produce faster results, but with potential loss of prediction accuracy. Values above
 *200* are not recommended.
 <br>`--no-filter` - Do not filter input waveforms
