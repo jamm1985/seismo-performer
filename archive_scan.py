@@ -32,7 +32,7 @@ if __name__ == '__main__':
                                                '(each slice is: 4 seconds by 3 channels)',
                         default = 150)
     parser.add_argument('--trace-size', '-b', help = 'Length of loaded and processed seismic data stream, '
-                                                     'default: 100 000 samples', default = 100_000)
+                                                     'default: 600 seconds', default = 600)
     parser.add_argument('--shift', help = 'Sliding windows shift, default: 40 samples (40 ms)', default = 40)
     parser.add_argument('--no-filter', help = 'Do not filter input waveforms', action = 'store_true')
     parser.add_argument('--no-detrend', help = 'Do not detrend input waveforms', action = 'store_true')
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     half_duration = (n_features * 0.5) / frequency
 
     args.batch_size = int(args.batch_size)
-    args.trace_size = int(args.trace_size)
+    args.trace_size = int(float(args.trace_size) * frequency)
     args.shift = int(args.shift)
     args.print_precision = int(args.print_precision)
 
