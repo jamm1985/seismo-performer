@@ -208,22 +208,15 @@ def normalize_windows_global(windows):
         windows[_i, :, :] = windows[_i, :, :] / win_max
 
 
-def normalize_windows_per_trace(windows):
+def normalize_global(data):
     """
     Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
-    :param windows:
+    :param data: NumPy array to normalize
     :return:
     """
     # Shape (windows_number, n_features, channels_number)
-    n_win = windows.shape[0]
-    ch_num = windows.shape[2]
-
-    for _i in range(n_win):
-
-        for _j in range(ch_num):
-
-            win_max = np.max(np.abs(windows[_i, :, _j]))
-            windows[_i, :, _j] = windows[_i, :, _j] / win_max
+    m = np.max(np.abs(data[:]))
+    data /= m
 
 
 def plot_positives(scores, windows, threshold):
@@ -320,40 +313,50 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
     # Cut all traces to a same timeframe
     _traces = cut_traces(*_traces)
 
-    # Normalize
-    # TODO: Change normalization to normalization per element
     # normalize_traces(*traces, global_normalize = global_normalize)
 
-    # Get sliding window arrays
-    l_windows = []
-    for x in _traces:
-        l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
+    if args.window_normalization:
+        # Get sliding window arrays
+        l_windows = []
+        for x in _traces:
+            l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
 
-    if args.plot_positives_original:
-        original_l_windows = []
-        for x in original_data:
-            original_l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
+        if args.plot_positives_original:
+            original_l_windows = []
+            for x in original_data:
+                original_l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
 
-    w_length = min([x.shape[0] for x in l_windows])
+        w_length = min([x.shape[0] for x in l_windows])
 
-    # Prepare data
-    windows = np.zeros((w_length, n_features, len(l_windows)))
-    for _i in range(len(l_windows)):
-        windows[:, :, _i] = l_windows[_i][:w_length]
+        # Prepare data
+        windows = np.zeros((w_length, n_features, len(l_windows)))
+        for _i in range(len(l_windows)):
+            windows[:, :, _i] = l_windows[_i][:w_length]
 
-    if args.plot_positives_original:
-        original_windows = np.zeros((w_length, n_features, len(original_l_windows)))
-        for _i in range(len(original_l_windows)):
-            original_windows[:, :, _i] = original_l_windows[_i][:w_length]
+        if args.plot_positives_original:
+            original_windows = np.zeros((w_length, n_features, len(original_l_windows)))
+            for _i in range(len(original_l_windows)):
+                original_windows[:, :, _i] = original_l_windows[_i][:w_length]
 
-    # Global max normalization:
-    # TODO: Make an parameter for local normalization
-    normalize_windows_global(windows)
-    if args.plot_positives_original:
-        normalize_windows_global(original_windows)
+        # Global max normalization:
+        normalize_windows_global(windows)
+        if args.plot_positives_original:
+            normalize_windows_global(original_windows)
 
-    # Per-channel normalization:
-    # normalize_windows_per_trace(windows)
+    else:
+        min_size = min([tr.data.shape[0] for tr in _traces])
+
+        data = np.zeros((min_size, len(_traces)))
+
+        for i, tr in enumerate(_traces):
+            data[:, i] = tr.data[:min_size]
+
+        normalize_global(data)
+
+        windows = sliding_window_strided(data, 400, args.shift, False)
+
+        if args.plot_positives_original:
+            original_windows = windows.copy()
 
     # Predict
     start_time = time()
