@@ -315,7 +315,7 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
 
     # normalize_traces(*traces, global_normalize = global_normalize)
 
-    if args.window_normalization:
+    if not args.trace_normalization:
         # Get sliding window arrays
         l_windows = []
         for x in _traces:

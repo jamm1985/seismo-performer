@@ -51,8 +51,9 @@ if __name__ == '__main__':
                                           ' format examples: "2021-04-01" or "2021-04-01T12:35:40"', default = None)
     parser.add_argument('--end', help = 'Latest time stamp allowed for input waveforms'
                                         ' format examples: "2021-04-01" or "2021-04-01T12:35:40"', default = None)
-    parser.add_argument('--window-normalization', help = 'Normalize input data per window, otherwise - per full trace.'
-                                                         ' Reduces performance and memory demand is set.',
+    parser.add_argument('--trace-normalization', help = 'Normalize input data per trace, otherwise - per full trace.'
+                                                        ' Increases performance and reduces memory demand if set (at'
+                                                        ' a cost of potential accuracy loss).',
                         action = 'store_true')
 
     args = parser.parse_args()  # parse arguments
