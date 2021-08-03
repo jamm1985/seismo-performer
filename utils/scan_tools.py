@@ -166,6 +166,32 @@ def sliding_window(data, n_features, n_shift):
     return windows.copy()
 
 
+def sliding_window_strided(data, n_features, n_shift, copy = False):
+    """
+    Return NumPy array of sliding windows. Which is basically a view into a copy of original data array.
+
+    Arguments:
+    data       -- numpy array to make a sliding windows on. Shape (n_samples, n_channels)
+    n_features -- length in samples of the individual window
+    n_shift    -- shift between windows starting points
+    copy       -- copy data or return a view into existing data? Default: False
+    """
+    from numpy.lib.stride_tricks import as_strided
+
+    # Get sliding windows shape
+    stride_shape = (data.shape[0] - n_features + n_shift) // n_shift
+    stride_shape = [stride_shape, n_features, data.shape[-1]]
+
+    strides = [data.strides[0]*n_shift, *data.strides]
+
+    windows = as_strided(data, stride_shape, strides)
+
+    if copy:
+        return windows
+    else:
+        return windows.copy()
+
+
 def normalize_windows_global(windows):
     """
     Normalizes sliding windows array. IMPORTANT: windows should have separate memory, striped windows would break.
