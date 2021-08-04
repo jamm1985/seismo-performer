@@ -96,8 +96,10 @@ python archive_scan.py -h
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*;
 <br> threshold can be also customized per label, usage example: `--threshold "p:0.95, s:0.99"`;
 threshold string format: *"[label:threshold],..."*
-<br>`--batch-size` VALUE - batch size, default: *10 000* samples
-<br>`--shift` VALUE - sliding window shift in samples, default: *40* samples. Increase in
+<br>`--trace-size` VALUE Length of loaded and processed seismic data stream, default: 600 seconds
+<br>`--batch-size` VALUE - model batch size, default: 150 slices 
+(generally each slice is: 4 seconds by 3 channels)
+<br>`--shift` VALUE - sliding window shift in samples, default: *40* milliseconds. Increase in
 value will produce faster results, but with potential loss of prediction accuracy. Values above
 *200* are not recommended.
 <br>`--no-filter` - Do not filter input waveforms
@@ -105,6 +107,10 @@ value will produce faster results, but with potential loss of prediction accurac
 <br>`--print-precision` PRECISION - Floating point precision for predictions pseudo-probability output
 <br>`--time` - Print model prediction performance time (in stdout)
 <br>`--cpu` - Enforce only CPU resources usage
+<br>`--trace-normalization` - Normalize input data per trace (see `--trace-size`). By default, per window
+normalization used. Using per trace normalization will reduce memory usage and yield a very small increase in
+performance at cost of potentially lower detection accuracy (original models are trained for per window normalization)
+
 
 ### Model selection and custom models
 
