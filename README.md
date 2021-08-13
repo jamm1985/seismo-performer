@@ -175,7 +175,7 @@ Each dataset contains contains seismograms evenly split between P-waves, S-waves
 
 Sample dims:
 - `X shape: 400x3` (4-second, 3-channel, 100 sps wave data)
-- `Y shape: 1` (class labels: `P=0`, `S=1`, `Noise=2`)
+- `Y shape: 1` (sparse class labels: `P=0`, `S=1`, `Noise=2`)
 
 # Citation
 
