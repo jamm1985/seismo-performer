@@ -1,5 +1,5 @@
 from tensorflow import keras
-import seismo_transformer as st
+import seismo_performer as sp
 
 
 def load_performer(weights_path = None):
@@ -8,7 +8,7 @@ def load_performer(weights_path = None):
     :param weights_path:
     :return:
     """
-    _model = st.seismo_performer_with_spec(
+    _model = sp.seismo_performer_with_spec(
                                         maxlen=400,
                                         nfft=64,
                                         hop_length=16,
@@ -39,7 +39,7 @@ def load_cnn(weights_path = None):
     :param weights_path:
     :return:
     """
-    _model = st.model_cnn_spec(400,64,16)
+    _model = sp.model_cnn_spec(400,64,16)
 
     _model.compile(optimizer = keras.optimizers.Adam(learning_rate = 0.0001),
                    loss = keras.losses.SparseCategoricalCrossentropy(),

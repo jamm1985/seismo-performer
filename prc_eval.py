@@ -12,10 +12,10 @@ if __name__ == '__main__':
 
     # Options parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', '-w', help = 'Path to Seismo-Transformer model weights file')
-    parser.add_argument('--cnn', help = 'Use CNN version of the Seismo-Transformer',
+    parser.add_argument('--weights', '-w', help = 'Path to Seismo-Performer model weights file')
+    parser.add_argument('--cnn', help = 'Use CNN version of the Seismo-Performer',
                         action = 'store_true')
-    parser.add_argument('--favor', help = 'Use Fast-Attention version of the Seismo-Transformer',
+    parser.add_argument('--favor', help = 'Use Fast-Attention version of the Seismo-Performer',
                         action = 'store_true')
     parser.add_argument('--model', help = 'Custom model loader module import path')
     parser.add_argument('--data', '-d', help = 'Dataset file path')

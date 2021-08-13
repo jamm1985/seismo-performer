@@ -1,5 +1,5 @@
 """
-File: seismo_transformer.py
+File: seismo_performer.py
 Author: Andrey Stepnov
 Email: myjamm@gmail.com
 Github: https://github.com/jamm1985
