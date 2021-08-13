@@ -1,14 +1,12 @@
-# Seismo-Transformer
+# Seismo-Performer
 
 # Introduction
 
-In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Transformer: generally based machine learning approach for recognizing seismic phases from local earthquakes_. 
+In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Performer: generally based and efficient machine learning approach for recognition seismic phases from local earthquakes in real time_. 
 
 # Installation
 
 # Available models
-
-# How to fine-tune
 
 # How to predict on archives
 
@@ -59,26 +57,21 @@ NYSH P 0.9997 01.04.2021 00:31:05.36
 Scan archives using regular high performance fast-attention model, with detection threshold `0.9997` for P and `0.9995` S waves:
 
 ```
-python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --batch-size 10000 --time --print-precision 10
+python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --time --print-precision 10
 ```
 
-To speed up processing on GPU please increase batch size (100000+). You can also turn off the preprocessing filter (2 Hz), as it was for the original training data. Note that in the case of Seismo-Performer, less preprocessing does not actually affect prediction performance, so the same prediction thresholds can be used:
-
-```
-python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --batch-size 100000 --no-detrend --time --print-precision 10
-```
+To speed up processing on GPU please increase batch size (200000+) and trace size (6000+). You can also turn off the preprocessing filter (2 Hz), as it was for the original training data. 
 
 CNN model variant:
 
 ```
-python archive_scan.py test/nysh_archives.txt --cnn --threshold "p: 0.9999, s: 0.9995" --batch-size 10000 --time --print-precision 10
+python archive_scan.py test/nysh_archives.txt --cnn --threshold "p: 0.9999, s: 0.9995" --time --print-precision 10
 ```
 
-To improve time for scanning acrhives please increase batch size.
+[Original GPD](https://github.com/interseismic/generalized-phase-detection) model redeployed in tensorflow 2.5:
 
-[GPD](https://pubs.geoscienceworld.org/ssa/bssa/article-abstract/108/5A/2894/546740/Generalized-Seismic-Phase-Detection-with-Deep?redirectedFrom=fulltext) model:
 ```
-python archive_scan.py --gpd test/nysh_archives.txt
+python archive_scan.py --gpd test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --time --print-precision 10
 ```
 
 Display help message:
