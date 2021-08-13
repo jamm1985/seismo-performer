@@ -105,15 +105,7 @@ normalization used. Using per trace normalization will reduce memory usage and y
 performance at cost of potentially lower detection accuracy (original models are trained for per window normalization)
 
 
-### Model selection and custom models
-
-#### Seismo-Performer
-
-To select fast-attention with high accuracy use `--hpm` flag.
-<br>Use `--cnn` flag for CNN model variant.
-<br>High perfomance Seismo-Performer will be used if no flag provided.
-
-#### Custom models
+### Custom models
 It is possible to predict with custom models, in order to do so, follow these steps:
 
 *1. Create model loader*
