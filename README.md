@@ -167,15 +167,15 @@ python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=pat
 
 # Test datasets
 
-[Sakhalin (HDF5, 127 MB)](https://drive.google.com/file/d/1dH2JF9TQmyB6GpIB_dY1jiWAI5uqp6ED/view?usp=sharing). Total samples 13689: P 4137, S 4776, Noise 4776.
+[Sakhalin (HDF5, 127 MB)](https://drive.google.com/file/d/1dH2JF9TQmyB6GpIB_dY1jiWAI5uqp6ED/view?usp=sharing). Total samples 9827: P 3045, S 3737, Noise 3045.
 
-[Dagestan (HDF5, 200 MB)](https://drive.google.com/file/d/156w3I9QVnhkCo0u7wjh-c6xekE9f6B3G/view?usp=sharing). Total samples 21572: P 8068, S 6752, Noise 6752.
+[Dagestan (HDF5, 200 MB)](https://drive.google.com/file/d/156w3I9QVnhkCo0u7wjh-c6xekE9f6B3G/view?usp=sharing). Total samples 28111: P 9547, S 9017, Noise 9547.
 
 Each dataset contains contains seismograms evenly split between P-waves, S-waves, and noise classes. 
 
 Sample dims:
 - `X shape: 400x3` (4-second, 3-channel, 100 sps wave data)
-- `Y shape: 1` (class label: P=0, S=1, Noise=2)
+- `Y shape: 1` (class labels: `P=0`, `S=1`, `Noise=2`)
 
 # Citation
 
