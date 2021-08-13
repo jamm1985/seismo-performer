@@ -12,7 +12,7 @@ In this repository we release implementation of the model, the model configurati
 
 `python archive_scan.py [OPTIONS] <input_file>`
 
-Performer model prediction example:
+Seismo-Performer model prediction example:
 <br>
 ```
 python archive_scan.py test/nysh_archives.txt
