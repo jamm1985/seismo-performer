@@ -160,6 +160,10 @@ Sample dims:
 - `X shape: 400x3` (4-second, 3-channel, 100 sps wave data)
 - `Y shape: 1` (sparse class labels: `P=0`, `S=1`, `Noise=2`)
 
+# Models training and validation
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jamm1985/seismo-performer/blob/main/seismo_performer.ipynb)
+
 # Citation
 
 The manuscript have been submitted to a journal.
