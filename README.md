@@ -30,9 +30,9 @@ pip install -r requirements.txt
 
 **Seismo-Performer** - high performance fast-attention spectrogram-based model with 57к parameters.
 
-**Spec-CNN** - spectrogram-based model variant with CNN instead of Performer with 176k parameters.
+**Spec-CNN** - spectrogram-based model variant with CNN instead of Performer (176k parameters).
 
-**GPD-fixed** - [Original GPD](https://github.com/interseismic/generalized-phase-detection) model redeployed in tensorflow 2.5
+**GPD-fixed** - [Original GPD](https://github.com/interseismic/generalized-phase-detection) model redeployed in tensorflow 2.5 with 1,742k parameters.
 
 
 # How to predict on archives
