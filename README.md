@@ -108,7 +108,6 @@ python archive_scan.py -h
 ### Options
 `-h`, `--help` - display help message
 <br>`--weights`, `-w` FILENAME - path to model weights file
-<br>`--hpm` - use fast attention model with high accuracy
 <br>`--cnn` - use CNN model variant
 <br>`--out`, `-o` FILENAME - output file, default: *predictions.txt*
 <br>`--threshold` VALUE - positive prediction threshold, default: *0.95*;
