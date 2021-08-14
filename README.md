@@ -162,7 +162,7 @@ Sample dims:
 
 # Models training and validation
 
-[![Open training, testing, and validation code in Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jamm1985/seismo-performer/blob/main/seismo_performer.ipynb)
+Please, see examples of training, testing, and validation at seismo-performer.ipynb, also available in Google Colab.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jamm1985/seismo-performer/blob/main/seismo_performer.ipynb)
 
 # Citation
 
