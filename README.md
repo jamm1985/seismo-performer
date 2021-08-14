@@ -1,10 +1,31 @@
 # Seismo-Performer
 
-# Introduction
-
 In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Performer: generally based and efficient machine learning approach for recognition seismic phases from local earthquakes in real time_. 
 
 # Installation
+
+Clone:
+```
+git clone https://github.com/jamm1985/seismo-performer.git
+cd seismo-performer
+```
+
+The code is well tested in Python 3.8 and tensorflow 2.5.0 and 2.4.1. 
+
+In existing environments, install the following package versions:
+```
+pip install einops==0.3.0 obspy==1.2.2 kapre==0.3.5 tensorflow==2.5.0
+```
+
+You can also use virtual environment:
+
+```
+pip install virtualenv
+virtualenv -p python3 env
+source env/bin/activate
+pip install -r requirements.txt
+```
+
 
 # Available models
 
