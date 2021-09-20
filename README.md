@@ -1,6 +1,24 @@
 # Seismo-Performer
 
-In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Performer: generally based and efficient machine learning approach for recognition seismic phases from local earthquakes in real time_. 
+In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Performer: A Novel Machine Learning Approach for General and Efficient Seismic Phase Recognition from Local Earthquakes in Real Time_.
+
+
+<!-- vim-markdown-toc GFM -->
+
+* [Installation](#installation)
+* [Available models](#available-models)
+* [How to predict on archives](#how-to-predict-on-archives)
+    * [Input file](#input-file)
+    * [Output file](#output-file)
+    * [Usage Examples](#usage-examples)
+    * [Options](#options)
+    * [Custom models](#custom-models)
+      * [Custom model example](#custom-model-example)
+* [Test datasets](#test-datasets)
+* [Models training and validation](#models-training-and-validation)
+* [Citation](#citation)
+
+<!-- vim-markdown-toc -->
 
 # Installation
 
