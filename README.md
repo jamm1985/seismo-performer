@@ -194,4 +194,22 @@ Please, see examples of training, testing, and validation at [seismo-performer.i
 
 # Citation
 
-The manuscript have been submitted to a journal.
+Stepnov, A.; Chernykh, V.; Konovalov, A. The Seismo-Performer: A Novel Machine Learning Approach for General and Efficient Seismic Phase Recognition from Local Earthquakes in Real Time. Sensors 2021, 21, 6290. https://doi.org/10.3390/s21186290
+
+BibTeX:
+
+```
+@Article{s21186290,
+AUTHOR = {Stepnov, Andrey and Chernykh, Vladimir and Konovalov, Alexey},
+TITLE = {The Seismo-Performer: A Novel Machine Learning Approach for General and Efficient Seismic Phase Recognition from Local Earthquakes in Real Time},
+JOURNAL = {Sensors},
+VOLUME = {21},
+YEAR = {2021},
+NUMBER = {18},
+ARTICLE-NUMBER = {6290},
+URL = {https://www.mdpi.com/1424-8220/21/18/6290},
+ISSN = {1424-8220},
+ABSTRACT = {When recording seismic ground motion in multiple sites using independent recording stations one needs to recognize the presence of the same parts of seismic waves arriving at these stations. This problem is known in seismology as seismic phase picking. It is challenging to automate the accurate picking of seismic phases to the level of human capabilities. By solving this problem, it would be possible to automate routine processing in real time on any local network. A new machine learning approach was developed to classify seismic phases from local earthquakes. The resulting model is based on spectrograms and utilizes the transformer architecture with a self-attention mechanism and without any convolution blocks. The model is general for various local networks and has only 57 k learning parameters. To assess the generalization property, two new datasets were developed, containing local earthquake data collected from two different regions using a wide variety of seismic instruments. The data were not involved in the training process for any model to estimate the generalization property. The new model exhibits the best classification and computation performance results on its pre-trained weights compared with baseline models from related work. The model code is available online and is ready for day-to-day real-time processing on conventional seismic equipment without graphics processing units.},
+DOI = {10.3390/s21186290}
+}
+```
