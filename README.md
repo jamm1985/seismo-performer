@@ -20,6 +20,8 @@ In this repository we release implementation of the model, the model configurati
 
 <!-- vim-markdown-toc -->
 
+![Model overview](https://www.mdpi.com/sensors/sensors-21-06290/article_deploy/html/images/sensors-21-06290-g001.png)
+
 # Installation
 
 Clone:
