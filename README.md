@@ -136,7 +136,7 @@ threshold string format: *"[label:threshold],..."*
 <br>`--trace-size` VALUE Length of loaded and processed seismic data stream, default: 600 seconds
 <br>`--batch-size` VALUE - model batch size, default: 150 slices 
 (generally each slice is: 4 seconds by 3 channels)
-<br>`--shift` VALUE - sliding window shift in samples, default: *40* milliseconds. Increase in
+<br>`--shift` VALUE - sliding window shift in samples, default: *10* milliseconds. Increase in
 value will produce faster results, but with potential loss of prediction accuracy. Values above
 *200* are not recommended.
 <br>`--no-filter` - Do not filter input waveforms
