@@ -315,11 +315,13 @@ def scan_traces(*_traces, model = None, args = None, n_features = 400, shift = 1
 
     # normalize_traces(*traces, global_normalize = global_normalize)
 
-    if not args.trace_normalization:
-        # Get sliding window arrays
-        l_windows = []
+    # Get sliding window arrays
+    l_windows = []
+    try:
         for x in _traces:
-            l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = args.shift))
+            l_windows.append(sliding_window(x.data, n_features = n_features, n_shift = shift))
+    except ValueError:
+        return None, 0
 
         if args.plot_positives_original:
             original_l_windows = []
