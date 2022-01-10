@@ -23,7 +23,8 @@ In this repository we release implementation of the model, the model configurati
 
 <!-- vim-markdown-toc -->
 
-![Example](https://www.mdpi.com/sensors/sensors-21-06290/article_deploy/html/images/sensors-21-06290-g005.png)
+![prob](https://user-images.githubusercontent.com/3518847/148774287-da6b19f2-29a5-49e2-ab90-dee1961cc655.png)
+
 
 # Installation
 
