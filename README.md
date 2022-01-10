@@ -7,6 +7,7 @@ In this repository we release implementation of the model, the model configurati
 
 * [Installation](#installation)
 * [Available models](#available-models)
+* [Available weights](#available-weights)
 * [How to predict on archives](#how-to-predict-on-archives)
     * [Input file](#input-file)
     * [Output file](#output-file)
@@ -14,6 +15,8 @@ In this repository we release implementation of the model, the model configurati
     * [Options](#options)
     * [Custom models](#custom-models)
       * [Custom model example](#custom-model-example)
+* [Train datasets](#train-datasets)
+  * [Combined dataset](#combined-dataset)
 * [Test datasets](#test-datasets)
 * [Models training and validation](#models-training-and-validation)
 * [Citation](#citation)
@@ -34,7 +37,7 @@ The code is well tested in Python 3.8 and tensorflow 2.5.0 and 2.4.1.
 
 In existing environments, install the following package versions:
 ```
-pip install einops==0.3.0 obspy==1.2.2 kapre==0.3.5 tensorflow==2.5.0
+pip install einops==0.3.2 obspy==1.2.2 kapre==0.3.6 tensorflow==2.7.0
 ```
 
 You can also use virtual environment:
@@ -46,6 +49,8 @@ source env/bin/activate
 pip install -r requirements.txt
 ```
 
+Python version 3.9 is recommended.
+
 # Available models
 
 **Seismo-Performer** - high performance fast-attention spectrogram-based model with 57к parameters.
@@ -54,6 +59,14 @@ pip install -r requirements.txt
 
 **GPD-fixed** - [Original GPD](https://github.com/interseismic/generalized-phase-detection) model redeployed in tensorflow 2.5 with 1,742k parameters.
 
+
+# Available weights
+
+- `w_gpd_scsn_2000_2017.h5` cloned weights from [Original GPD](https://github.com/interseismic/generalized-phase-detection) model.
+- `w_model_performer_with_spec.hd5` first version of weights for Seismo-Performer learned from [Generalized Seismic Phase Detection with Deep Learning](https://scedc.caltech.edu/data/deeplearning.html#phase_detection) dataset.
+- `w_model_performer_v2.0.h5` v2.0 weights learned from combined dataset (see [Train datasets](#train-datasets) section) for Seismo-Performer 
+- `weights_model_cnn_spec.hd5` first version of weights for Spec-CNN learned from [Generalized Seismic Phase Detection with Deep Learning](https://scedc.caltech.edu/data/deeplearning.html#phase_detection) dataset.
+- `w_model_cnn_v2.0.h5` v2.0 weights learned from combined dataset (see [Train datasets](#train-datasets) section) for Spec-CNN
 
 # How to predict on archives
 
@@ -65,7 +78,12 @@ Seismo-Performer model prediction example:
 python archive_scan.py test/nysh_archives.txt
 ```
 
-Predictions are saved in text file which default name is `predictions.txt`
+
+The default model is Seismo-Performer. You can switch to Spec-CNN by adding the `--cnn` flag. Note that CNN may be more accurate and result in fewer false positives. However, CNN requires 30% more CPU time.
+
+The default prediction threshold is `0.998` for both P and S waves. You can vary that parameter to filter out false positives. Please see examples.
+
+By default the v2.0 weights is used. You can switch to another weights by the `--weights` key.
 
 ### Input file
 `input_file` contains archive filenames (recommended channel order: `N, E, Z`) 
@@ -82,7 +100,8 @@ Note that files are passed to the model in the order they are specified in `inpu
 Advised channel order: `N, E, Z`.
 
 ### Output file
-Output file consists of positives predictions divided by a line break.
+
+Predictions are saved in text file which default name is `predictions.txt`. Output file consists of positives predictions divided by a line break.
 
 Prediction format:
 <br>
@@ -99,21 +118,21 @@ NYSH P 0.9997449517 01.04.2021 19:19:18.86
 
 ### Usage Examples
 
-Scan archives using regular high performance fast-attention model, with detection threshold `0.9997` for P and `0.9995` S waves:
+Scan archives using regular high performance fast-attention model, with custom detection threshold `0.9997` for P and `0.9995` S waves:
 
 ```
 python archive_scan.py test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --time --print-precision 10
 ```
 
-To speed up processing on GPU please increase batch size (200000+) and trace size (6000+). You can also turn off the preprocessing filter (2 Hz), as it was for the original training data. 
+To speed up processing on GPU please increase batch size by `--batch-size 200000` and `--trace-size 6000`. You can also turn off the preprocessing filter (2 Hz) by `--no-filter`, as it was for the original training data.
 
-CNN model variant:
+Use CNN model variant:
 
 ```
 python archive_scan.py test/nysh_archives.txt --cnn --threshold "p: 0.9999, s: 0.9995" --time --print-precision 10
 ```
 
-[Original GPD](https://github.com/interseismic/generalized-phase-detection) model redeployed in tensorflow 2.5:
+Use [Original GPD](https://github.com/interseismic/generalized-phase-detection) model redeployed in tensorflow 2.7:
 
 ```
 python archive_scan.py --gpd test/nysh_archives.txt --threshold "p: 0.9997, s: 0.9995" --time --print-precision 10
@@ -193,18 +212,45 @@ Function `load_model` then will be called.
 python .\archive_scan.py --model test.keras_loader --loader_argv "model_path=path/to/model weights_path=path/to/weights" .\test\nysh_archives.txt
 ```
 
+# Train datasets
+
+## Combined dataset
+
+```
+Datasets info: 
+dataset "GPD"
+	---length: 4773750
+	---p_wave count: 1591250
+	---s_wave count: 1591250
+	---noise count: 1591250
+dataset "STEAD:"
+	---length: 2531314
+	---p_wave count: 1030231
+	---s_wave count: 1030231
+	---noise count: 470852
+dataset "MEIER"
+	---length: 945571
+	---p_wave count: 0
+	---s_wave count: 0
+	---noise count: 945571
+Total length: 8250635
+```
+
+[combined.h5, (HDF5, 74,38GB)](https://drive.google.com/file/d/1d0vP1XFSFkgWUHPPu3y9LEZqEM2fhSld/view?usp=sharing)
+
+Sample dims:
+- `X shape: 400x3` (4-second, 3-channel, 100 sps wave data)
+- `Y shape: 1` (sparse class labels: `P=0`, `S=1`, `Noise=2`)
 
 # Test datasets
 
 [Sakhalin (HDF5, 93MB)](https://drive.google.com/file/d/1dH2JF9TQmyB6GpIB_dY1jiWAI5uqp6ED/view?usp=sharing): Total samples 9827: P 3045, S 3737, Noise 3045.
 
-[Dagestan (HDF5, 373 MB)](https://drive.google.com/file/d/156w3I9QVnhkCo0u7wjh-c6xekE9f6B3G/view?usp=sharing): Total samples 28111: P 9547, S 9017, Noise 9547.
+[Dagestan (HDF5, 373MB)](https://drive.google.com/file/d/156w3I9QVnhkCo0u7wjh-c6xekE9f6B3G/view?usp=sharing): Total samples 28111: P 9547, S 9017, Noise 9547.
 
 Each dataset contains contains seismograms evenly split between P-waves, S-waves, and noise classes. 
 
-Sample dims:
-- `X shape: 400x3` (4-second, 3-channel, 100 sps wave data)
-- `Y shape: 1` (sparse class labels: `P=0`, `S=1`, `Noise=2`)
+Sample dims the same as for training data.
 
 # Models training and validation
 

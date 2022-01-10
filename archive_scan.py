@@ -12,22 +12,20 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 if __name__ == '__main__':
 
     # Default weights for models
-    default_weights = {'favor': 'WEIGHTS/w_model_performer_with_spec.hd5',
-                       'hpa': 'WEIGHTS/w_model_performer_with_spec_hight_accuracy.hd5',
-                       'cnn': 'WEIGHTS/weights_model_cnn_spec.hd5',
+    default_weights = {'favor': 'WEIGHTS/w_model_performer_v2.0.h5',
+                       'cnn': 'WEIGHTS/w_model_cnn_v2.0.h5',
                        'gpd': 'WEIGHTS/w_gpd_scsn_2000_2017.h5'}
 
     # Command line arguments parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help = 'Path to .csv file with archive names')
     parser.add_argument('--weights', '-w', help = 'Path to model weights', default = None)
-    parser.add_argument('--hpa', help = 'Use Fast-Attention with high accuracy', action = 'store_true')
     parser.add_argument('--cnn', help = 'Use simple CNN model on top of spectrogram', action = 'store_true')
     parser.add_argument('--gpd', help = 'Use GPD model', action = 'store_true')
     parser.add_argument('--model', help = 'Custom model loader import, default: None', default = None)
     parser.add_argument('--loader_argv', help = 'Custom model loader arguments, default: None', default = None)
     parser.add_argument('--out', '-o', help = 'Path to output file with predictions', default = 'predictions.txt')
-    parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.95', default = 0.95)
+    parser.add_argument('--threshold', help = 'Positive prediction threshold, default: 0.998', default = 0.998)
     parser.add_argument('--batch-size', help = 'Model batch size, default: 150 slices '
                                                '(each slice is: 4 seconds by 3 channels)',
                         default = 150)
@@ -181,10 +179,6 @@ if __name__ == '__main__':
             import utils.seismo_load as seismo_load
             if not args.weights: args.weights = default_weights['cnn']
             model = seismo_load.load_cnn(args.weights)
-        elif args.hpa:
-            import utils.seismo_load as seismo_load
-            if not args.weights: args.weights = default_weights['hpa']
-            model = seismo_load.load_performer_hpa(args.weights)
         elif args.gpd:
             from utils.gpd_loader import load_model as load_gpd
             if not args.weights: args.weights = default_weights['gpd']
