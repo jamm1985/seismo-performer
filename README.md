@@ -33,8 +33,6 @@ git clone https://github.com/jamm1985/seismo-performer.git
 cd seismo-performer
 ```
 
-The code is well tested in Python 3.8 and tensorflow 2.5.0 and 2.4.1. 
-
 In existing environments, install the following package versions:
 ```
 pip install einops==0.3.2 obspy==1.2.2 kapre==0.3.6 tensorflow==2.7.0
