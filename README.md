@@ -1,5 +1,7 @@
 # Seismo-Performer
 
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/the-seismo-performer-a-novel-machine-learning/seismic-detection-on-southern-california)](https://paperswithcode.com/sota/seismic-detection-on-southern-california?p=the-seismo-performer-a-novel-machine-learning)
+
 In this repository we release implementation of the model, the model configuration, the pretrained best-fitted weights and the code examples from the original paper _The Seismo-Performer: A Novel Machine Learning Approach for General and Efficient Seismic Phase Recognition from Local Earthquakes in Real Time_.
 
 
